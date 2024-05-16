@@ -1,2 +1,2 @@
-using var game = new HelloWorld.Game1();
+using var game = new GAY.TheGame();
 game.Run();
