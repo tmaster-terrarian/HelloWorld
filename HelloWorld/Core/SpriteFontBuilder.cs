@@ -1,30 +1,26 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace GAY.Core;
-
-class P
-{
-    public int height;
-
-    public P(int height)
-    {
-        this.height = height;
-    }
-
-    public Point to(int width)
-    {
-        return new Point(width, height); // me too lazy
-    }
-}
+namespace HelloWorld.Core;
 
 public static class SpriteFontBuilder
 {
+    internal class P
+    {
+        public int height;
+
+        public P(int height)
+        {
+            this.height = height;
+        }
+
+        public Point to(int width)
+        {
+            return new Point(width, height); // me too lazy
+        }
+    }
+
     public static SpriteFont BuildDefaultFont(Texture2D texture)
     {
         P p = new P(14);

@@ -2,9 +2,9 @@ using System.ComponentModel;
 using Math = System.Math;
 
 using Microsoft.Xna.Framework;
-using System;
+using Microsoft.Xna.Framework.Graphics;
 
-namespace GAY.Core;
+namespace HelloWorld.Core;
 
 public struct TransformData
 {
@@ -13,14 +13,11 @@ public struct TransformData
     public float? angle;
 }
 
-#pragma warning disable CS0659
-#pragma warning disable CS0661
-[ImmutableObject(true)]
-public struct Transform
+public class Transform
 {
-    public Vector2 position { get; private set; }
-    public Vector2 scale { get; private set; }
-    public float angle { get; private set; }
+    public Vector2 position { get; private set; } = Vector2.Zero;
+    public Vector2 scale { get; private set; } = Vector2.One;
+    public float angle { get; private set; } = 0;
 
     public Transform(Vector2 position, Vector2 scale, float angle)
     {
@@ -42,64 +39,50 @@ public struct Transform
     {
         this.position = position;
         this.scale = scale;
-        this.angle = 0;
     }
 
     public Transform(Vector2 position, float uniformScale)
     {
         this.position = position;
         this.scale = Vector2.One * uniformScale;
-        this.angle = 0;
     }
 
     public Transform(Vector2 position)
     {
         this.position = position;
-        this.scale = Vector2.One;
-        this.angle = 0;
     }
 
-    public Transform()
-    {
-        this.position = Vector2.Zero;
-        this.scale = Vector2.One;
-        this.angle = 0;
-    }
+    public Transform() {}
 
     #endregion
 
     #region modification functions
 
-    public readonly Transform Translate(Vector2 position, bool relative = true)
+    public Transform Translate(Vector2 position, bool relative = true)
     {
         return new Transform(relative ? position + this.position : position, this.scale, this.angle);
     }
 
-    public readonly Transform Scale(Vector2 scale, bool multiply = true)
-    {
-        return new Transform(this.position, multiply ? scale * this.scale : scale, this.angle);
-    }
-
-    public readonly Transform Scale(float scale, bool multiply = true)
-    {
-        return this.Scale(Vector2.One * scale, multiply);
-    }
-
-    public readonly Transform Rotate(float angle, bool relative = true)
+    public Transform Rotate(float angle, bool relative = true)
     {
         return new Transform(this.position, this.scale, relative ? angle + this.angle : angle);
     }
 
-    public readonly Transform RotateRadians(float angle, bool relative = true)
+    public Transform Scale(Vector2 scale, bool multiply = true)
     {
-        return new Transform(this.position, this.scale, relative ? Utils.RadToDeg(angle) + this.angle : Utils.RadToDeg(angle));
+        return new Transform(this.position, multiply ? scale * this.scale : scale, this.angle);
+    }
+
+    public Transform Scale(float uniformScale, bool multiply = true)
+    {
+        return this.Scale(Vector2.One * uniformScale, multiply);
     }
 
     #endregion
 
     #region conversion
 
-    public override readonly string ToString()
+    public override string ToString()
     {
         return $"{{position: {position}, scale: {scale}, angle: {angle}}}";
     }
@@ -109,7 +92,7 @@ public struct Transform
     /// <para>The Matrix multiplication order is angle, then scale, then translation.</para>
     /// </summary>
     /// <returns>Matrix</returns>
-    public readonly Matrix ToMatrix()
+    public Matrix ToMatrix()
     {
         Matrix translation = Matrix.Identity;
         translation[0, 2] = position.X;
@@ -130,11 +113,6 @@ public struct Transform
 
     #region equation / comparison
 
-    public readonly bool Equals(Transform transform)
-    {
-        return transform.position == position && transform.scale == scale && transform.angle == angle;
-    }
-
     public static bool operator ==(Transform a, Transform b)
     {
         return a.Equals(b);
@@ -144,12 +122,20 @@ public struct Transform
         return !(a == b);
     }
 
-    public override readonly bool Equals(object obj)
+    public override bool Equals(object obj)
     {
-        return Equals(this, obj);
+        if(ReferenceEquals(this, obj)) return true;
+        if(obj == null) return false;
+
+        if(obj.GetType() == typeof(Transform)) return Equals(this, obj);
+
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        throw new System.NotImplementedException();
     }
 
     #endregion
 }
-#pragma warning restore CS0661
-#pragma warning restore CS0659

@@ -5,3 +5,14 @@ dotnet_diagnostic.IDE0003.severity = none
 
 # CA1051: Do not declare visible instance fields
 dotnet_diagnostic.CA1051.severity = none
+
+# CS0660: Type defines operator == or operator != but does not override ___
+dotnet_diagnostic.CS0659.severity = suggestion
+dotnet_diagnostic.CS0660.severity = suggestion
+dotnet_diagnostic.CS0661.severity = suggestion
+
+# CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+dotnet_diagnostic.CS8632.severity = suggestion
+
+# CS0436: Type conflicts with imported type
+dotnet_diagnostic.CS0436.severity = suggestion
