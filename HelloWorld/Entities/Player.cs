@@ -1,32 +1,45 @@
 using System;
 using System.Collections.Generic;
-using HelloWorld.Registries;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Input;
+
+using HelloWorld.Registries;
 
 namespace HelloWorld;
 
 public class Player : Entity
 {
+    protected List<SoundRegistryEntry> sounds = new();
+
     public float moveSpeed = 2f;
-    public float gravity = 0.2f;
+    public float gravity = 0.165f;
     public bool onGround = false;
 
     public int inputDir = 0;
 
     public override Vector2 RenderPosition => base.RenderPosition;
 
+    public static event EventHandler<PlayerLandedEvent>? PlayerLanded;
+
+    private readonly PlayerInventory _inventory = new();
+    private int _selectedSlot = 0;
+
+    public PlayerInventory Inventory => _inventory;
+
+    public int HeldItemSlot => _selectedSlot;
+    public ItemStack HeldItem => _inventory[_selectedSlot];
+
     public Player()
     {
         width = 8;
         height = 14;
         Layer = 3;
+
+        _inventory.TryInsert(new("IronPickaxe"), 0);
+        _inventory.TryInsert(new("stone", 10), 2);
     }
-
-    public static event EventHandler<PlayerLandedEvent>? PlayerLanded;
-
-    protected List<SoundRegistryEntry> sounds = new();
 
     public void LoadContent()
     {
@@ -38,16 +51,24 @@ public class Player : Entity
     {
         inputDir = Convert.ToInt32(Input.Get(Keys.D)) - Convert.ToInt32(Input.Get(Keys.A));
 
+        float accel = 0.12f;
+        float fric = 0.08f;
+        if(!onGround)
+        {
+            accel = 0.07f;
+            fric = 0.02f;
+        }
+
         if(inputDir == 1)
         {
             facing = 1;
             if(velocity.X < 0)
             {
-                MathUtil.Approach(ref velocity.X, 0, 0.18f * delta);
+                MathUtil.Approach(ref velocity.X, 0, fric * delta);
             }
             else if(velocity.X < moveSpeed)
             {
-                MathUtil.Approach(ref velocity.X, moveSpeed, 0.12f * delta);
+                MathUtil.Approach(ref velocity.X, moveSpeed, accel * delta);
             }
         }
         else if(inputDir == -1)
@@ -55,16 +76,16 @@ public class Player : Entity
             facing = -1;
             if(-velocity.X < 0)
             {
-                MathUtil.Approach(ref velocity.X, 0, 0.18f * delta);
+                MathUtil.Approach(ref velocity.X, 0, fric * delta);
             }
             else if(-velocity.X < moveSpeed)
             {
-                MathUtil.Approach(ref velocity.X, -moveSpeed, 0.12f * delta);
+                MathUtil.Approach(ref velocity.X, -moveSpeed, accel * delta);
             }
         }
         else
         {
-            MathUtil.Approach(ref velocity.X, 0, 0.18f * 2 * delta);
+            MathUtil.Approach(ref velocity.X, 0, fric * 2 * delta);
         }
 
         if(!onGround)
@@ -78,6 +99,24 @@ public class Player : Entity
 
             velocity.Y = -3.7f;
         }
+
+        int slotSelectDir = -Input.GetScrollDelta();
+
+        _selectedSlot += slotSelectDir;
+
+        if(_selectedSlot < 0) _selectedSlot = 9;
+        if(_selectedSlot > 9) _selectedSlot = 0;
+
+        if(Input.GetPressed(Keys.D1)) _selectedSlot = 0;
+        if(Input.GetPressed(Keys.D2)) _selectedSlot = 1;
+        if(Input.GetPressed(Keys.D3)) _selectedSlot = 2;
+        if(Input.GetPressed(Keys.D4)) _selectedSlot = 3;
+        if(Input.GetPressed(Keys.D5)) _selectedSlot = 4;
+        if(Input.GetPressed(Keys.D6)) _selectedSlot = 5;
+        if(Input.GetPressed(Keys.D7)) _selectedSlot = 6;
+        if(Input.GetPressed(Keys.D8)) _selectedSlot = 7;
+        if(Input.GetPressed(Keys.D9)) _selectedSlot = 8;
+        if(Input.GetPressed(Keys.D0)) _selectedSlot = 9;
 
         if(Input.Get(Keys.LeftControl))
         {
@@ -106,5 +145,32 @@ public class Player : Entity
         }
 
         public Player Player { get; set; }
+    }
+
+    public bool IsHoldingTileItem()
+    {
+        if(HeldItem is null) return false;
+
+        var settings = HeldItem.GetRegistryEntry()?.settings;
+
+        if(settings is null) return false;
+
+        if(settings.pickaxe) return true;
+        if(settings.tileItem) return true;
+
+        return false;
+    }
+
+    public bool IsHoldingPlaceable()
+    {
+        if(HeldItem is null) return false;
+
+        var settings = HeldItem.GetRegistryEntry()?.settings;
+
+        if(settings is null) return false;
+
+        if(settings.tileItem) return true;
+
+        return false;
     }
 }

@@ -6,12 +6,9 @@ namespace HelloWorld.Registries;
 [System.Serializable]
 public class SoundSettings
 {
-    public float volume;
+    public float volume = 1f;
 
-    public static SoundSettings Default => new SoundSettings
-    {
-        volume = 1,
-    };
+    public static SoundSettings Default => new SoundSettings();
 }
 
 public class SoundRegistryEntry : IRegistryEntry

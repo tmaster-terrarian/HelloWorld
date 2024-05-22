@@ -7,8 +7,7 @@ namespace HelloWorld.Graphics;
 public class PlayerRenderer : IPlayerRenderer
 {
     private Texture2D texture;
-
-    private SpriteBatch _spriteBatch;
+    private readonly SpriteBatch _spriteBatch;
 
     public PlayerRenderer(GraphicsDevice graphicsDevice)
     {
@@ -32,18 +31,6 @@ public class PlayerRenderer : IPlayerRenderer
     private void DrawPlayer(Player player, Vector2 position, float rotation, Vector2 pivotPoint)
     {
         _spriteBatch.Draw(
-            texture,
-            Vector2.Round(position) + new Vector2(4, 6),
-            null,
-            Color.White,
-            rotation,
-            pivotPoint,
-            1,
-            SpriteEffects.FlipHorizontally & (SpriteEffects)Math.Max(0u, -player.facing),
-            0
-        );
-
-        _spriteBatch.Draw(
             Main.OnePixel,
             new Rectangle(player.Hitbox.X, player.Hitbox.Y, player.Hitbox.Width, player.Hitbox.Height),
             null,
@@ -52,6 +39,18 @@ public class PlayerRenderer : IPlayerRenderer
             Vector2.Zero,
             SpriteEffects.None,
             0
+        );
+
+        _spriteBatch.Draw(
+            texture,
+            Vector2.Round(position) + new Vector2(4, 6),
+            null,
+            Color.White,
+            rotation,
+            pivotPoint,
+            1,
+            SpriteEffects.FlipHorizontally & (SpriteEffects)Math.Max(0, -player.facing),
+            0.5f
         );
     }
 }

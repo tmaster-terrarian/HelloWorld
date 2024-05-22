@@ -1,14 +1,14 @@
 using System;
 
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Content;
 
 using HelloWorld.Core;
-using HelloWorld.Registries;
 using HelloWorld.Graphics;
-using Microsoft.Xna.Framework.Audio;
+using HelloWorld.Registries;
 
 namespace HelloWorld;
 
@@ -31,7 +31,7 @@ public class Main : Game
     public static ContentManager ContentManager { get; private set; }
     public static GameWindow MainWindow { get; private set; }
 
-    Player ClientPlayer;
+    public static Player Player;
 
     RenderTarget2D renderTarget;
 
@@ -48,9 +48,12 @@ public class Main : Game
     }
 
     private IPlayerRenderer clientPlayerRenderer;
+    private CursorRenderer cursorRenderer;
+    private InventoryRenderer inventoryRenderer;
 
     public static readonly TileRegistry TileRegistry = new TileRegistry();
     public static readonly SoundRegistry SoundRegistry = new SoundRegistry();
+    public static readonly ItemRegistry ItemRegistry = new ItemRegistry();
 
     public Main()
     {
@@ -62,6 +65,8 @@ public class Main : Game
         ContentManager = Content;
 
         GamepadEnabled = false;
+
+        IsFixedTimeStep = true;
     }
 
     protected override void Initialize()
@@ -77,15 +82,12 @@ public class Main : Game
         SoundEffect.MasterVolume = 0.5f;
 
         TileRegistry.Register();
+        ItemRegistry.Register();
 
-        IsFixedTimeStep = false;
-
-        ClientPlayer = new Player()
+        Player = new Player()
         {
             position = new Vector2(320 / 2, 180 / 2)
         };
-
-        Level = new Level();
 
         GamepadDeadZone = 4096;
 
@@ -100,7 +102,10 @@ public class Main : Game
 
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
+        Level = new Level(GraphicsDevice);
         clientPlayerRenderer = new PlayerRenderer(GraphicsDevice);
+        cursorRenderer = new CursorRenderer(GraphicsDevice);
+        inventoryRenderer = new InventoryRenderer(GraphicsDevice, Player.Inventory);
 
         base.Initialize();
     }
@@ -112,27 +117,35 @@ public class Main : Game
         SoundRegistry.Register();
 
         Level.LoadContent();
+
         clientPlayerRenderer.LoadContent();
-        ClientPlayer.LoadContent();
+        Player.LoadContent();
+
+        cursorRenderer.LoadContent();
+
+        inventoryRenderer.LoadContent();
 
         font = SpriteFontBuilder.BuildDefaultFont(Content.Load<Texture2D>("Fonts/default"));
     }
 
     Vector2 inputVector = Vector2.Zero;
 
-    private static KeyboardState keyboardState;
-    private static GamePadState gamePadState;
-    private static JoystickState joystickState;
+    private static KeyboardState _keyboardState;
+    private static GamePadState _gamePadState;
+    private static JoystickState _joystickState;
+    private static MouseState _mouseState;
 
-    public static KeyboardState KeyboardState { get => keyboardState; protected set => keyboardState = value; }
-    public static GamePadState GamePadState { get => gamePadState; protected set => gamePadState = value; }
-    public static JoystickState JoystickState { get => joystickState; protected set => joystickState = value; }
+    public static KeyboardState KeyboardState => _keyboardState;
+    public static GamePadState GamePadState => _gamePadState;
+    public static JoystickState JoystickState => _joystickState;
+    public static MouseState MouseState => _mouseState;
 
     protected override void Update(GameTime gameTime)
     {
-        keyboardState = Input.GetKeyboardState();
-        gamePadState  = Input.GetGamePadState();
-        joystickState = Input.GetJoystickState();
+        _keyboardState = Input.GetKeyboardState();
+        _gamePadState  = Input.GetGamePadState();
+        _joystickState = Input.GetJoystickState();
+        _mouseState = Input.GetMouseState(Window);
 
         if(GamePadState.IsButtonDown(Buttons.Back) || KeyboardState.IsKeyDown(Keys.Escape))
             Exit();
@@ -156,7 +169,44 @@ public class Main : Game
 
         if(inputVector != Vector2.Zero) inputVector.Normalize();
 
-        ClientPlayer.Update(delta);
+        Player.Update(delta);
+
+        var mouseTile = Level.GetTileAtPosition(MouseWorldPos);
+        if(mouseTile != null)
+        {
+            if(mouseTile.id == "air" || !Player.IsHoldingTileItem())
+            {
+                if
+                (
+                    Player.IsHoldingPlaceable()
+                    && Level.TileMeeting(new Rectangle((Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize - Vector2.One).ToPoint(), new Point(10, 10)))
+                    && !Level.TileMeeting(new Rectangle((Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize + Vector2.One * 2).ToPoint(), new Point(2, 2)))
+                )
+                {
+                    cursorRenderer.CursorPos = Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize;
+                    cursorRenderer.State = CursorRenderer.DrawState.Visible;
+
+                    cursorRenderer.positionInvalid = Vector2.Distance(
+                        Player.Center - Vector2.UnitY * 3 * Level.tileSize,
+                        Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize
+                    ) > 6 * Level.tileSize;
+                }
+                else
+                    cursorRenderer.State = CursorRenderer.DrawState.Hidden;
+            }
+            else
+            {
+                cursorRenderer.CursorPos = Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize;
+                cursorRenderer.State = CursorRenderer.DrawState.Visible;
+
+                cursorRenderer.positionInvalid = Vector2.Distance(
+                    Player.Center - Vector2.UnitY * 3 * Level.tileSize,
+                    Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize
+                ) > 6 * Level.tileSize;
+            }
+        }
+
+        cursorRenderer.Update(delta);
 
         base.Update(gameTime);
     }
@@ -170,16 +220,20 @@ public class Main : Game
 
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
-        clientPlayerRenderer.DrawPlayer(ClientPlayer);
+        clientPlayerRenderer.DrawPlayer(Player);
 
         Level.Draw(drawContext);
 
-        string fps = "fps:" + (int)(1/gameTime.ElapsedGameTime.TotalSeconds);
+        cursorRenderer.Draw(drawContext);
+
+        inventoryRenderer.Draw(drawContext);
+
+        string fps = "fps:" + (int)MathHelper.Max(0f, (float)(1 / gameTime.ElapsedGameTime.TotalSeconds));
 
         _spriteBatch.DrawString(
             font,
             fps,
-            Vector2.Zero + Vector2.One,
+            Vector2.Zero + Vector2.One + Vector2.UnitY * 18,
             Color.Black,
             0,
             Vector2.Zero,
@@ -190,7 +244,7 @@ public class Main : Game
         _spriteBatch.DrawString(
             font,
             fps,
-            Vector2.Zero,
+            Vector2.Zero + Vector2.UnitY * 18,
             Color.White,
             0,
             Vector2.Zero,

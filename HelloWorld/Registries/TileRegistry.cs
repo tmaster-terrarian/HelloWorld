@@ -6,12 +6,9 @@ namespace HelloWorld.Registries;
 [System.Serializable]
 public class TileOptions
 {
-    public bool isAir;
+    public bool isAir = false;
 
-    public static TileOptions Default => new TileOptions
-    {
-        isAir = false,
-    };
+    public static TileOptions Default => new TileOptions();
 }
 
 public class TileRegistryEntry : IRegistryEntry

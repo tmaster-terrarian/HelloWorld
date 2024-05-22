@@ -2,10 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using HelloWorld.Graphics;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+
+using HelloWorld.Graphics;
 
 namespace HelloWorld.Core;
 
@@ -83,8 +85,12 @@ public class Level : IDisposable
 
     private Dictionary<string, Texture2D> _textureCache;
 
-    public Level()
+    private SpriteBatch _spriteBatch;
+
+    public Level(GraphicsDevice graphicsDevice)
     {
+        _spriteBatch = new SpriteBatch(graphicsDevice);
+
         width = 40;
         height = 23;
         Tiles = new Tile[width, height];
@@ -117,6 +123,8 @@ public class Level : IDisposable
                 Tiles[x, Y] = new Tile("stone");
             }
         }
+
+        Tiles[16, 16] = new Tile("stone");
 
         _collisions = new Rectangle[width, height];
         RefreshTileShapes(Bounds);
@@ -190,6 +198,8 @@ public class Level : IDisposable
 
     public void Draw(DrawContext context)
     {
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
         for(int x = 0; x < width; x++)
         {
             for(int y = 0; y < height; y++)
@@ -208,7 +218,7 @@ public class Level : IDisposable
                 UV.Width *= tileSize;
                 UV.Height *= tileSize;
 
-                context.spriteBatch.Draw(
+                _spriteBatch.Draw(
                     texture,
                     new Vector2(x * tileSize, y * tileSize),
                     UV,
@@ -221,6 +231,8 @@ public class Level : IDisposable
                 );
             }
         }
+
+        _spriteBatch.End();
     }
 
     public void Dispose()
@@ -234,7 +246,7 @@ public class Level : IDisposable
         int x = (int)(position.X / tileSize);
         int y = (int)(position.Y / tileSize);
 
-        if(x < 0 || x >= width || y < 0 || y >= height) return "air";
+        if(!InWorld(x, y)) return "air";
 
         return Tiles[x, y].id;
     }
@@ -244,8 +256,38 @@ public class Level : IDisposable
         int x = position.X;
         int y = position.Y;
 
-        if(x < 0 || x >= width || y < 0 || y >= height) return "air";
+        if(!InWorld(x, y)) return "air";
 
         return Tiles[x, y].id;
+    }
+
+    public Tile GetTileAtPosition(Vector2 position)
+    {
+        int x = (int)(position.X / tileSize);
+        int y = (int)(position.Y / tileSize);
+
+        if(!InWorld(x, y)) return null;
+
+        return Tiles[x, y];
+    }
+
+    public Tile GetTileAtTilePosition(Point position)
+    {
+        int x = position.X;
+        int y = position.Y;
+
+        if(!InWorld(x, y)) return null;
+
+        return Tiles[x, y];
+    }
+
+    public static bool InWorld(Level level, int x, int y)
+    {
+        return x >= 0 && x < level.width && y >= 0 && y < level.height;
+    }
+
+    public bool InWorld(int x, int y)
+    {
+        return x >= 0 && x < width && y >= 0 && y < height;
     }
 }

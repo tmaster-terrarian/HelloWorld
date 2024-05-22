@@ -16,8 +16,19 @@ public static class Input
         return currentKeyboardState;
     }
 
-    static GamePadState[] currentGamepadStates = new GamePadState[4];
-    static GamePadState[] previousGamepadStates = new GamePadState[4];
+    static MouseState currentMouseState;
+    static MouseState previousMouseState;
+
+    public static MouseState GetMouseState(GameWindow window = null)
+    {
+        previousMouseState = currentMouseState;
+        currentMouseState = Mouse.GetState(window == null ? Main.MainWindow : window);
+
+        return currentMouseState;
+    }
+
+    static readonly GamePadState[] currentGamepadStates = new GamePadState[4];
+    static readonly GamePadState[] previousGamepadStates = new GamePadState[4];
 
     public static GamePadState GetGamePadState() => GetGamePadState(PlayerIndex.One);
 
@@ -74,4 +85,9 @@ public static class Input
     public static bool GetPressed(Buttons button) => GetPressed(button, PlayerIndex.One);
 
     public static bool GetReleased(Buttons button) => GetReleased(button, PlayerIndex.One);
+
+    public static int GetScrollDelta()
+    {
+        return System.Math.Sign(currentMouseState.ScrollWheelValue - previousMouseState.ScrollWheelValue);
+    }
 }
