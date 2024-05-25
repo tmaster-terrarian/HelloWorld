@@ -14,8 +14,10 @@ namespace HelloWorld;
 
 public class Main : Game
 {
-    public int GamepadDeadZone;
-    public bool GamepadEnabled;
+    public static int GamepadDeadZone { get; private set; }
+
+    public static bool GamepadEnabled { get; private set; }
+
     public Point screenSize {
         get {
             return new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
@@ -37,6 +39,8 @@ public class Main : Game
 
     SpriteFont font;
 
+    Vector2 inputVector = Vector2.Zero;
+
     private static GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
@@ -55,18 +59,31 @@ public class Main : Game
     public static readonly SoundRegistry SoundRegistry = new SoundRegistry();
     public static readonly ItemRegistry ItemRegistry = new ItemRegistry();
 
+    private static KeyboardState _keyboardState;
+    private static GamePadState _gamePadState;
+    private static JoystickState _joystickState;
+    private static MouseState _mouseState;
+
+    public static KeyboardState KeyboardState => _keyboardState;
+    public static GamePadState GamePadState => _gamePadState;
+    public static JoystickState JoystickState => _joystickState;
+    public static MouseState MouseState => _mouseState;
+
+    private static bool _debugMode = false;
+    public static bool DebugModeEnabled => _debugMode;
+
     public Main()
     {
         _graphics = new GraphicsDeviceManager(this);
 
-        Content.RootDirectory = "Content";
         IsMouseVisible = true;
-
-        ContentManager = Content;
-
+        IsFixedTimeStep = true;
         GamepadEnabled = false;
 
-        IsFixedTimeStep = true;
+        Content.RootDirectory = "Content";
+        ContentManager = Content;
+
+        _debugMode = true;
     }
 
     protected override void Initialize()
@@ -128,18 +145,6 @@ public class Main : Game
         font = SpriteFontBuilder.BuildDefaultFont(Content.Load<Texture2D>("Fonts/default"));
     }
 
-    Vector2 inputVector = Vector2.Zero;
-
-    private static KeyboardState _keyboardState;
-    private static GamePadState _gamePadState;
-    private static JoystickState _joystickState;
-    private static MouseState _mouseState;
-
-    public static KeyboardState KeyboardState => _keyboardState;
-    public static GamePadState GamePadState => _gamePadState;
-    public static JoystickState JoystickState => _joystickState;
-    public static MouseState MouseState => _mouseState;
-
     protected override void Update(GameTime gameTime)
     {
         _keyboardState = Input.GetKeyboardState();
@@ -179,8 +184,10 @@ public class Main : Game
                 if
                 (
                     Player.IsHoldingPlaceable()
-                    && Level.TileMeeting(new Rectangle((Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize - Vector2.One).ToPoint(), new Point(10, 10)))
-                    && !Level.TileMeeting(new Rectangle((Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize + Vector2.One * 2).ToPoint(), new Point(2, 2)))
+                    && (
+                        Level.TileMeeting(new Rectangle((Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize - Vector2.UnitX).ToPoint(), new Point(10, 8))) ||
+                        Level.TileMeeting(new Rectangle((Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize - Vector2.UnitY).ToPoint(), new Point(8, 10)))
+                    )
                 )
                 {
                     cursorRenderer.CursorPos = Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize;
@@ -194,16 +201,18 @@ public class Main : Game
                 else
                     cursorRenderer.State = CursorRenderer.DrawState.Hidden;
             }
-            else
+            else if(!Player.IsHoldingPlaceable())
             {
                 cursorRenderer.CursorPos = Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize;
                 cursorRenderer.State = CursorRenderer.DrawState.Visible;
 
                 cursorRenderer.positionInvalid = Vector2.Distance(
                     Player.Center - Vector2.UnitY * 3 * Level.tileSize,
-                    Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize
+                    Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize + Vector2.One * (Level.tileSize / 2f)
                 ) > 6 * Level.tileSize;
             }
+            else
+                cursorRenderer.State = CursorRenderer.DrawState.Hidden;
         }
 
         cursorRenderer.Update(delta);
@@ -233,7 +242,7 @@ public class Main : Game
         _spriteBatch.DrawString(
             font,
             fps,
-            Vector2.Zero + Vector2.One + Vector2.UnitY * 18,
+            Vector2.Zero + Vector2.UnitY * 18 + Vector2.One,
             Color.Black,
             0,
             Vector2.Zero,
@@ -245,6 +254,18 @@ public class Main : Game
             font,
             fps,
             Vector2.Zero + Vector2.UnitY * 18,
+            Color.White,
+            0,
+            Vector2.Zero,
+            1,
+            SpriteEffects.None,
+            1
+        );
+
+        _spriteBatch.DrawString(
+            font,
+            MathF.Round(Player.velocity.X / 8 * 60).ToString(),
+            Vector2.Zero + Vector2.UnitY * 30,
             Color.White,
             0,
             Vector2.Zero,

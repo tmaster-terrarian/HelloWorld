@@ -42,7 +42,7 @@ public class ItemOptionsBuilder
         return this;
     }
 
-    public ItemOptionsBuilder TileItem(bool value = true)
+    public ItemOptionsBuilder Tile(bool value = true)
     {
         options.tileItem = value;
         return this;
@@ -63,9 +63,18 @@ public class ItemRegistryEntry : IRegistryEntry
 
     public string GetTexturePath()
     {
-        if(settings.tileItem) return "Images/Tiles/" + ID;
-
         return "Images/Item/" + ID;
+    }
+}
+
+public class TileItemRegistryEntry : ItemRegistryEntry
+{
+    public TileItemRegistryEntry(string id, ItemOptions settings) : base(id, settings) {}
+    public TileItemRegistryEntry(string id) : base(id) {}
+
+    public virtual void OnPlace()
+    {
+        
     }
 }
 
@@ -73,16 +82,19 @@ public class ItemRegistry : GenericRegistry<ItemRegistryEntry>
 {
     public override Dictionary<string, ItemRegistryEntry> registry => Registry.ItemRegistry;
 
-    readonly ItemRegistryEntry IRON_PICKAXE = new ItemRegistryEntry("IronPickaxe",
+    readonly ItemRegistryEntry MISSING = new("Missing");
+
+    readonly ItemRegistryEntry IRON_PICKAXE = new("IronPickaxe",
         new ItemOptionsBuilder().MaxStacks(1).Pickaxe().build()
     );
 
-    readonly ItemRegistryEntry STONE = new ItemRegistryEntry("stone",
-        new ItemOptionsBuilder().TileItem().build()
+    readonly TileItemRegistryEntry STONE = new("Stone",
+        new ItemOptionsBuilder().Tile().build()
     );
 
     public override void Register()
     {
+        Registry.RegisterItem(MISSING);
         Registry.RegisterItem(IRON_PICKAXE);
         Registry.RegisterItem(STONE);
     }

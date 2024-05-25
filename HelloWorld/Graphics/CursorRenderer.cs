@@ -11,7 +11,6 @@ public class CursorRenderer : IDrawable
     private readonly SpriteBatch _spriteBatch;
 
     private Vector2 _cursorPos = Vector2.Zero;
-    private Vector2 _cursorVel = Vector2.Zero;
     private Vector2 _targetCursorPos = Vector2.Zero;
     private Vector2 _lastTargetCursorPos = Vector2.Zero;
 
@@ -78,7 +77,7 @@ public class CursorRenderer : IDrawable
 
     public void Update(float delta)
     {
-        _alpha = MathUtil.Approach(_alpha, _alphaTarget, _alphaRate * delta);
+        _alpha = MathUtil.Approach(_alpha, _alphaTarget * (positionInvalid ? 0.5f : 1), _alphaRate * delta);
 
         _spriteFrameID = MathUtil.Approach(_spriteFrameID, 0, 0.2f * delta);
 
@@ -101,7 +100,7 @@ public class CursorRenderer : IDrawable
             _texture,
             _cursorPos,
             _spriteFrame,
-            Color.White * _alpha * (positionInvalid ? 0.5f : 1),
+            Color.White * _alpha,
             0,
             Vector2.One * 4,
             1,

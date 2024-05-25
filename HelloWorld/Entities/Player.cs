@@ -14,7 +14,8 @@ public class Player : Entity
     protected List<SoundRegistryEntry> sounds = new();
 
     public float moveSpeed = 2f;
-    public float gravity = 0.165f;
+    public float jumpSpeed = -4.1f;
+    public float gravity = 0.2f;
     public bool onGround = false;
 
     public int inputDir = 0;
@@ -38,7 +39,7 @@ public class Player : Entity
         Layer = 3;
 
         _inventory.TryInsert(new("IronPickaxe"), 0);
-        _inventory.TryInsert(new("stone", 10), 2);
+        _inventory.TryInsert(new("Stone", 10), 2);
     }
 
     public void LoadContent()
@@ -66,9 +67,13 @@ public class Player : Entity
             {
                 MathUtil.Approach(ref velocity.X, 0, fric * delta);
             }
-            else if(velocity.X < moveSpeed)
+            if(velocity.X < moveSpeed)
             {
                 MathUtil.Approach(ref velocity.X, moveSpeed, accel * delta);
+            }
+            if(velocity.X > moveSpeed && onGround)
+            {
+                MathUtil.Approach(ref velocity.X, moveSpeed, fric/2 * delta);
             }
         }
         else if(inputDir == -1)
@@ -78,9 +83,13 @@ public class Player : Entity
             {
                 MathUtil.Approach(ref velocity.X, 0, fric * delta);
             }
-            else if(-velocity.X < moveSpeed)
+            if(-velocity.X < moveSpeed)
             {
                 MathUtil.Approach(ref velocity.X, -moveSpeed, accel * delta);
+            }
+            if(-velocity.X > moveSpeed && onGround)
+            {
+                MathUtil.Approach(ref velocity.X, -moveSpeed, fric/2 * delta);
             }
         }
         else
@@ -97,7 +106,7 @@ public class Player : Entity
         {
             sounds[1].Play();
 
-            velocity.Y = -3.7f;
+            velocity.Y = jumpSpeed;
         }
 
         int slotSelectDir = -Input.GetScrollDelta();

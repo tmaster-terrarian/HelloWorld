@@ -53,23 +53,12 @@ public class Level : IDisposable
         }
     }
 
-    public bool TileMeeting(Rectangle rect)
-    {
-        Rectangle[,] cols = Collisions;
-        for(int x = 0; x < width; x++)
-        {
-            for(int y = 0; y < height; y++)
-            {
-                var r = cols[x, y];
-
-                if(rect.Intersects(r)) return true;
-            }
-        }
-        return false;
-    }
+    public bool drawCollisionsOnDebug = false;
 
     public Tile TilePlace(Rectangle rect)
     {
+        if(Main.DebugModeEnabled && drawCollisionsOnDebug && !_collisionChecks.Contains(rect)) _collisionChecks.Add(rect);
+
         Rectangle[,] cols = Collisions;
         for(int x = 0; x < width; x++)
         {
@@ -83,13 +72,20 @@ public class Level : IDisposable
         return null;
     }
 
+    public bool TileMeeting(Rectangle rect)
+    {
+        return TilePlace(rect) != null;
+    }
+
     private Dictionary<string, Texture2D> _textureCache;
+    private readonly List<Rectangle> _collisionChecks;
 
     private SpriteBatch _spriteBatch;
 
     public Level(GraphicsDevice graphicsDevice)
     {
-        _spriteBatch = new SpriteBatch(graphicsDevice);
+        _spriteBatch = new(graphicsDevice);
+        _collisionChecks = new();
 
         width = 40;
         height = 23;
@@ -232,12 +228,27 @@ public class Level : IDisposable
             }
         }
 
+        if(Main.DebugModeEnabled && drawCollisionsOnDebug)
+        {
+            foreach(var rect in _collisionChecks)
+            {
+                _spriteBatch.Draw(
+                    Main.OnePixel,
+                    rect,
+                    Color.Red * 0.25f
+                );
+            }
+        }
+
+        if(_collisionChecks.Count > 0) _collisionChecks.Clear();
+
         _spriteBatch.End();
     }
 
     public void Dispose()
     {
         _textureCache.Clear();
+        _collisionChecks.Clear();
         Content.Unload();
     }
 

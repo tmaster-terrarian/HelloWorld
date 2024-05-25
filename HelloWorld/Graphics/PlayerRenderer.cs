@@ -52,5 +52,16 @@ public class PlayerRenderer : IPlayerRenderer
             SpriteEffects.FlipHorizontally & (SpriteEffects)Math.Max(0, -player.facing),
             0.5f
         );
+
+        _spriteBatch.Draw(
+            Main.OnePixel,
+            new Rectangle((player.Center - Vector2.One).ToPoint(), (Vector2.One * 2).ToPoint()),
+            null,
+            Color.Red,
+            0f,
+            Vector2.Zero,
+            SpriteEffects.None,
+            0
+        );
     }
 }

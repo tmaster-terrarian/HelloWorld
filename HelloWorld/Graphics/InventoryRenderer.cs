@@ -40,15 +40,8 @@ public class InventoryRenderer : IDrawable
             if(tex is null) continue;
 
             Rectangle? rect = null;
-            var size = MathHelper.Max(1f, 16f / tex.Width);
+            var size = 16f / MathHelper.Max(16, tex.Width);
             var pivot = new Vector2(tex.Width / 2f, tex.Height / 2f);
-
-            if(def.settings.tileItem)
-            {
-                size = 1;
-                rect = new Rectangle(0, 0, 8, 8);
-                pivot = new Vector2(4, 4);
-            }
 
             _spriteBatch.Draw(tex, new Vector2(11 + i * 20, 11), rect, Color.White, 0, pivot, size, SpriteEffects.None, 0);
         }

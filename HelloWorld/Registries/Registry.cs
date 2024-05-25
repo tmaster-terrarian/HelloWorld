@@ -48,7 +48,7 @@ public static class Registry
 
     public static ItemRegistryEntry GetItem(string id)
     {
-        return ItemRegistry.GetValueOrDefault(id);
+        return ItemRegistry.GetValueOrDefault(id) ?? ItemRegistry["Missing"];
     }
 }
 
