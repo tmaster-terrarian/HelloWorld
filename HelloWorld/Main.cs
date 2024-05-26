@@ -147,6 +147,22 @@ public class Main : Game
 
         Level.LoadContent();
 
+        Level.SetTile("stone", new(0, 0));
+        Level.SetTile("stone", new(1, 0));
+        Level.SetTile("stone", new(2, 0));
+        Level.SetTile("stone", new(0, 1));
+
+        for(var x = 0; x < Level.width; x++)
+        {
+            for(int y = 1; y < 3; y++)
+            {
+                int Y = Level.height - y;
+                Level.SetTile("stone", new(x, Y));
+            }
+        }
+
+        Level.SetTile("stone", new(16, 16));
+
         clientPlayerRenderer.LoadContent();
         Player.LoadContent();
 
@@ -235,6 +251,8 @@ public class Main : Game
             def.CreateTile(Level, pos);
 
             GlobalEvents.DoTilePlace(new TileEvent(pos, Player, Player.HeldItem.id));
+
+            Level.RefreshTileShapes(Level.Bounds);
         }
 
         cursorRenderer.Update(delta);

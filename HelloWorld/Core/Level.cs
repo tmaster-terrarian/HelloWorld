@@ -104,24 +104,8 @@ public class Level : IDisposable, IDrawable
             }
         }
 
-        _tiles[0, 0] = new Tile("stone");
-        _tiles[1, 0] = new Tile("stone");
-        _tiles[2, 0] = new Tile("stone");
-        _tiles[0, 1] = new Tile("stone");
-
-        for(var x = 0; x < width; x++)
-        {
-            for(int y = 1; y < 3; y++)
-            {
-                int Y = _tiles.GetLength(1) - y;
-                _tiles[x, Y] = new Tile("stone");
-            }
-        }
-
-        _tiles[16, 16] = new Tile("stone");
-
         _collisions = new Rectangle[width, height];
-        RefreshTileShapes(Bounds);
+        // RefreshTileShapes(Bounds);
     }
 
     public void RefreshTileShapes(Rectangle area)
@@ -174,17 +158,17 @@ public class Level : IDisposable, IDrawable
 
     public void LoadContent()
     {
-        for(int x = 0; x < width; x++)
-        {
-            for(int y = 0; y < height; y++)
-            {
-                Tile tile = _tiles[x, y];
-                if(!_textureCache.ContainsKey(tile.id))
-                {
-                    _textureCache.Add(tile.id, Main.ContentManager.Load<Texture2D>("Images/Tiles/" + tile.id));
-                }
-            }
-        }
+        // for(int x = 0; x < width; x++)
+        // {
+        //     for(int y = 0; y < height; y++)
+        //     {
+        //         Tile tile = _tiles[x, y];
+        //         if(!_textureCache.ContainsKey(tile.id))
+        //         {
+        //             _textureCache.Add(tile.id, Main.ContentManager.Load<Texture2D>("Images/Tiles/" + tile.id));
+        //         }
+        //     }
+        // }
     }
 
     public void Draw(GameTime gameTime)

@@ -139,7 +139,7 @@ public class Player : Entity
 
         if(Input.Get(Keys.LeftControl))
         {
-            position = Main.MouseWorldPos;
+            Center = Main.MouseWorldPos;
             velocity = Vector2.Zero;
         }
 
