@@ -202,9 +202,7 @@ public class Level : IDisposable, IDrawable
                 if(tile.id == "air") continue;
 
                 Texture2D texture;
-                _textureCache.TryGetValue(tile.id, out texture);
-
-                if(texture == null) continue;
+                if(!_textureCache.TryGetValue(tile.id, out texture)) continue;
 
                 Rectangle UV = Tile.GetShapeUV(tile.shape);
                 UV.X *= tileSize;
@@ -249,6 +247,8 @@ public class Level : IDisposable, IDrawable
         _collisionChecks.Clear();
     }
 
+    public string GetTileIdAtPosition(Vector2 position) => GetTileIdAtTilePosition((position / tileSize).ToPoint());
+
     public string GetTileIdAtTilePosition(Point position)
     {
         int x = position.X;
@@ -259,7 +259,7 @@ public class Level : IDisposable, IDrawable
         return _tiles[x, y].id;
     }
 
-    public string GetTileIdAtPosition(Vector2 position) => GetTileIdAtTilePosition((position / tileSize).ToPoint());
+    public Tile GetTileAtPosition(Vector2 position) => GetTileAtTilePosition((position / tileSize).ToPoint());
 
     public Tile GetTileAtTilePosition(Point position)
     {
@@ -270,8 +270,6 @@ public class Level : IDisposable, IDrawable
 
         return _tiles[x, y];
     }
-
-    public Tile GetTileAtPosition(Vector2 position) => GetTileAtTilePosition((position / tileSize).ToPoint());
 
     public void SetTile(string id, Point position)
     {
