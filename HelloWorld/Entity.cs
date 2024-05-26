@@ -17,6 +17,8 @@ public abstract class Entity
 
     protected float _layer { get; private set; }
 
+    public Level level { get; set; } = Main.Level;
+
     public int Layer
     {
         get => (int)(_layer * 10000);
@@ -97,7 +99,7 @@ public abstract class Entity
         velocity.Y = 0;
     }
 
-    public void Move(Vector2 vel, Level level, bool onCollisionX = true, bool onCollisionY = true)
+    public void Move(Vector2 vel, bool onCollisionX = true, bool onCollisionY = true)
     {
         remainderPosition += vel;
 

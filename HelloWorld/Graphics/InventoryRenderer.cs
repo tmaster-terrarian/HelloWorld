@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -10,6 +11,13 @@ public class InventoryRenderer : IDrawable
 
     private Texture2D slotTexture;
 
+    public event EventHandler<EventArgs> DrawOrderChanged;
+    public event EventHandler<EventArgs> VisibleChanged;
+
+    public int DrawOrder => 0;
+
+    public bool Visible => true;
+
     public InventoryRenderer(GraphicsDevice graphicsDevice, PlayerInventory inventory)
     {
         _spriteBatch = new SpriteBatch(graphicsDevice);
@@ -21,7 +29,7 @@ public class InventoryRenderer : IDrawable
         slotTexture = Main.ContentManager.Load<Texture2D>("Images/UI/slot");
     }
 
-    public void Draw(DrawContext drawContext)
+    public void Draw(GameTime gameTime)
     {
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
@@ -34,7 +42,7 @@ public class InventoryRenderer : IDrawable
             var item = _inventory[i];
             if(item is null) continue;
 
-            var def = item.GetRegistryEntry();
+            var def = item.GetDef();
 
             var tex = Main.ContentManager.Load<Texture2D>(def.GetTexturePath());
             if(tex is null) continue;

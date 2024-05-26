@@ -1,4 +1,5 @@
 using System;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -29,6 +30,9 @@ public class CursorRenderer : IDrawable
     private Rectangle _spriteFrame;
 
     public bool positionInvalid = false;
+
+    public event EventHandler<EventArgs> DrawOrderChanged;
+    public event EventHandler<EventArgs> VisibleChanged;
 
     public DrawState State
     {
@@ -64,6 +68,10 @@ public class CursorRenderer : IDrawable
         }
     }
 
+    public int DrawOrder => 0;
+
+    public bool Visible => true;
+
     public CursorRenderer(GraphicsDevice graphicsDevice)
     {
         _spriteBatch = new SpriteBatch(graphicsDevice);
@@ -92,7 +100,7 @@ public class CursorRenderer : IDrawable
         _cursorPos = Vector2.LerpPrecise(_cursorPos, _targetCursorPos, 0.25f * delta);
     }
 
-    public void Draw(DrawContext drawContext)
+    public void Draw(GameTime gameTime)
     {
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 

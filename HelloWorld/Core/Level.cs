@@ -7,15 +7,11 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
-using HelloWorld.Graphics;
-
 namespace HelloWorld.Core;
 
-public class Level : IDisposable
+public class Level : IDisposable, IDrawable
 {
-    public ContentManager Content { get; protected set; }
-
-    public Tile[,] Tiles { get; protected set; }
+    protected Tile[,] _tiles;
     public int width;
     public int height;
 
@@ -38,7 +34,7 @@ public class Level : IDisposable
             {
                 for(int y = 0; y < height; y++)
                 {
-                    var tile = Tiles[x, y];
+                    var tile = _tiles[x, y];
                     Rectangle rect = new Rectangle(-10000, -10000, 1, 1);
 
                     if(tile.id != "air")
@@ -53,6 +49,10 @@ public class Level : IDisposable
         }
     }
 
+    public int DrawOrder => 0;
+
+    public bool Visible => true;
+
     public bool drawCollisionsOnDebug = false;
 
     public Tile TilePlace(Rectangle rect)
@@ -66,21 +66,21 @@ public class Level : IDisposable
             {
                 var r = cols[x, y];
 
-                if(rect.Intersects(r)) return Tiles[x, y];
+                if(rect.Intersects(r)) return _tiles[x, y];
             }
         }
         return null;
     }
 
-    public bool TileMeeting(Rectangle rect)
-    {
-        return TilePlace(rect) != null;
-    }
+    public bool TileMeeting(Rectangle rect) => TilePlace(rect) != null;
 
     private Dictionary<string, Texture2D> _textureCache;
     private readonly List<Rectangle> _collisionChecks;
 
     private SpriteBatch _spriteBatch;
+
+    public event EventHandler<EventArgs> DrawOrderChanged;
+    public event EventHandler<EventArgs> VisibleChanged;
 
     public Level(GraphicsDevice graphicsDevice)
     {
@@ -89,9 +89,7 @@ public class Level : IDisposable
 
         width = 40;
         height = 23;
-        Tiles = new Tile[width, height];
-
-        Content = new ContentManager(Main.ContentManager.ServiceProvider, "Content");
+        _tiles = new Tile[width, height];
 
         _textureCache = new Dictionary<string, Texture2D>
         {
@@ -102,25 +100,25 @@ public class Level : IDisposable
         {
             for(int y = 0; y < height; y++)
             {
-                Tiles[x, y] = new Tile();
+                _tiles[x, y] = new Tile();
             }
         }
 
-        Tiles[0, 0] = new Tile("stone");
-        Tiles[1, 0] = new Tile("stone");
-        Tiles[2, 0] = new Tile("stone");
-        Tiles[0, 1] = new Tile("stone");
+        _tiles[0, 0] = new Tile("stone");
+        _tiles[1, 0] = new Tile("stone");
+        _tiles[2, 0] = new Tile("stone");
+        _tiles[0, 1] = new Tile("stone");
 
         for(var x = 0; x < width; x++)
         {
             for(int y = 1; y < 3; y++)
             {
-                int Y = Tiles.GetLength(1) - y;
-                Tiles[x, Y] = new Tile("stone");
+                int Y = _tiles.GetLength(1) - y;
+                _tiles[x, Y] = new Tile("stone");
             }
         }
 
-        Tiles[16, 16] = new Tile("stone");
+        _tiles[16, 16] = new Tile("stone");
 
         _collisions = new Rectangle[width, height];
         RefreshTileShapes(Bounds);
@@ -134,7 +132,7 @@ public class Level : IDisposable
         {
             for(int y = _area.Y; y < _area.Height; y++)
             {
-                Tile tile = Tiles[x, y];
+                Tile tile = _tiles[x, y];
 
                 Rectangle rect = new Rectangle(-10000, -10000, 1, 1);
                 if(tile.id != "air")
@@ -145,16 +143,16 @@ public class Level : IDisposable
 
                 byte matches = 0b0000;
 
-                if((y > 0 && Tiles[x, y - 1].id == tile.id) || y <= 0)
+                if((y > 0 && _tiles[x, y - 1].id == tile.id) || y <= 0)
                     matches |= 0b0001;
 
-                if((x < width - 1 && Tiles[x + 1, y].id == tile.id) || x >= width - 1)
+                if((x < width - 1 && _tiles[x + 1, y].id == tile.id) || x >= width - 1)
                     matches |= 0b0010;
 
-                if((y < height - 1 && Tiles[x, y + 1].id == tile.id) || y >= height - 1)
+                if((y < height - 1 && _tiles[x, y + 1].id == tile.id) || y >= height - 1)
                     matches |= 0b0100;
 
-                if((x > 0 && Tiles[x - 1, y].id == tile.id) || x <= 0)
+                if((x > 0 && _tiles[x - 1, y].id == tile.id) || x <= 0)
                     matches |= 0b1000;
 
                 tile.shape = matches;
@@ -183,16 +181,16 @@ public class Level : IDisposable
         {
             for(int y = 0; y < height; y++)
             {
-                Tile tile = Tiles[x, y];
+                Tile tile = _tiles[x, y];
                 if(!_textureCache.ContainsKey(tile.id))
                 {
-                    _textureCache.Add(tile.id, Content.Load<Texture2D>("Images/Tiles/" + tile.id));
+                    _textureCache.Add(tile.id, Main.ContentManager.Load<Texture2D>("Images/Tiles/" + tile.id));
                 }
             }
         }
     }
 
-    public void Draw(DrawContext context)
+    public void Draw(GameTime gameTime)
     {
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
@@ -200,7 +198,7 @@ public class Level : IDisposable
         {
             for(int y = 0; y < height; y++)
             {
-                Tile tile = Tiles[x, y];
+                Tile tile = _tiles[x, y];
                 if(tile.id == "air") continue;
 
                 Texture2D texture;
@@ -249,17 +247,6 @@ public class Level : IDisposable
     {
         _textureCache.Clear();
         _collisionChecks.Clear();
-        Content.Unload();
-    }
-
-    public string GetTileIdAtPosition(Vector2 position)
-    {
-        int x = (int)(position.X / tileSize);
-        int y = (int)(position.Y / tileSize);
-
-        if(!InWorld(x, y)) return "air";
-
-        return Tiles[x, y].id;
     }
 
     public string GetTileIdAtTilePosition(Point position)
@@ -269,18 +256,10 @@ public class Level : IDisposable
 
         if(!InWorld(x, y)) return "air";
 
-        return Tiles[x, y].id;
+        return _tiles[x, y].id;
     }
 
-    public Tile GetTileAtPosition(Vector2 position)
-    {
-        int x = (int)(position.X / tileSize);
-        int y = (int)(position.Y / tileSize);
-
-        if(!InWorld(x, y)) return null;
-
-        return Tiles[x, y];
-    }
+    public string GetTileIdAtPosition(Vector2 position) => GetTileIdAtTilePosition((position / tileSize).ToPoint());
 
     public Tile GetTileAtTilePosition(Point position)
     {
@@ -289,7 +268,21 @@ public class Level : IDisposable
 
         if(!InWorld(x, y)) return null;
 
-        return Tiles[x, y];
+        return _tiles[x, y];
+    }
+
+    public Tile GetTileAtPosition(Vector2 position) => GetTileAtTilePosition((position / tileSize).ToPoint());
+
+    public void SetTile(string id, Point position)
+    {
+        int x = position.X;
+        int y = position.Y;
+
+        if(!InWorld(x, y)) return;
+
+        _tiles[x, y] = new Tile(id);
+
+        RefreshTileShapes(new Rectangle(new Point(position.X - 2, position.Y - 2), new Point(5, 5)));
     }
 
     public static bool InWorld(Level level, int x, int y)

@@ -11,7 +11,7 @@ namespace HelloWorld;
 
 public class Player : Entity
 {
-    protected List<SoundRegistryEntry> sounds = new();
+    protected List<Registries.Sound.SoundDef> sounds = new();
 
     public float moveSpeed = 2f;
     public float jumpSpeed = -4.1f;
@@ -44,13 +44,23 @@ public class Player : Entity
 
     public void LoadContent()
     {
-        sounds.Add(Main.SoundRegistry.Get("playerLand"));
-        sounds.Add(Main.SoundRegistry.Get("playerJump"));
+        sounds.Add(Registry.GetSound("playerLand"));
+        sounds.Add(Registry.GetSound("playerJump"));
     }
 
     public override void Update(float delta)
     {
-        inputDir = Convert.ToInt32(Input.Get(Keys.D)) - Convert.ToInt32(Input.Get(Keys.A));
+        inputDir = Input.Get(Keys.D).ToInt32() - Input.Get(Keys.A).ToInt32();
+
+        bool wasOnGround = onGround;
+        onGround = level.TileMeeting(RectangleHelper.Shift(Hitbox, new Point(0, 1)));
+
+        if(!wasOnGround && onGround)
+        {
+            sounds[0].Play();
+
+            PlayerLanded?.Invoke(this, new PlayerLandedEvent(this));
+        }
 
         float accel = 0.12f;
         float fric = 0.08f;
@@ -133,17 +143,7 @@ public class Player : Entity
             velocity = Vector2.Zero;
         }
 
-        Move(velocity * delta, Main.Level);
-
-        bool wasOnGround = onGround;
-        onGround = Main.Level.TileMeeting(RectangleHelper.Shift(Hitbox, new Point(0, 1)));
-
-        if(!wasOnGround && onGround)
-        {
-            sounds[0].Play();
-
-            PlayerLanded?.Invoke(this, new PlayerLandedEvent(this));
-        }
+        Move(velocity * delta);
     }
 
     public class PlayerLandedEvent : EventArgs
@@ -153,19 +153,16 @@ public class Player : Entity
             Player = player;
         }
 
-        public Player Player { get; set; }
+        public Player Player { get; private set; }
     }
 
     public bool IsHoldingTileItem()
     {
         if(HeldItem is null) return false;
 
-        var settings = HeldItem.GetRegistryEntry()?.settings;
+        var settings = HeldItem.GetDef().settings;
 
-        if(settings is null) return false;
-
-        if(settings.pickaxe) return true;
-        if(settings.tileItem) return true;
+        if(settings.pickaxe || settings.tileItem) return true;
 
         return false;
     }
@@ -174,9 +171,7 @@ public class Player : Entity
     {
         if(HeldItem is null) return false;
 
-        var settings = HeldItem.GetRegistryEntry()?.settings;
-
-        if(settings is null) return false;
+        var settings = HeldItem.GetDef().settings;
 
         if(settings.tileItem) return true;
 

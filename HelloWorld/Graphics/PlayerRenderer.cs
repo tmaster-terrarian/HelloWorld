@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace HelloWorld.Graphics;
 
-public class PlayerRenderer : IPlayerRenderer
+public class PlayerRenderer
 {
     private Texture2D texture;
     private readonly SpriteBatch _spriteBatch;

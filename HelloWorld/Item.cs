@@ -1,5 +1,7 @@
-using HelloWorld.Registries;
 using Microsoft.Xna.Framework;
+
+using HelloWorld.Registries;
+using HelloWorld.Registries.Item;
 
 namespace HelloWorld;
 
@@ -8,9 +10,9 @@ public class Item : Entity
     public string id;
     public int stacks;
 
-    public Item()
+    public Item(string id)
     {
-        
+        this.id = id;
     }
 }
 
@@ -27,9 +29,14 @@ public class ItemStack
 
     public ItemStack(string id) : this(id, 1) {}
 
-    public ItemRegistryEntry GetRegistryEntry()
+    public ItemDef GetDef()
     {
         return Registry.GetItem(id);
+    }
+
+    public T GetDef<T>() where T : ItemDef
+    {
+        return (T)Registry.GetItem(id);
     }
 
     public static bool operator ==(ItemStack a, ItemStack b)

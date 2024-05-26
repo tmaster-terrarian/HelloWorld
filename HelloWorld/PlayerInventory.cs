@@ -37,7 +37,7 @@ public class PlayerInventory
         for(int i = 0; i < _items.Length; i++) // locate slots that are empty or have matching data
         {
             var slot = _items[i];
-            var def = slot.GetRegistryEntry();
+            var def = slot.GetDef();
 
             if(slot == null) // slot is empty
             {

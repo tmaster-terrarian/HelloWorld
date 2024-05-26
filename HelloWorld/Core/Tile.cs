@@ -1,4 +1,5 @@
 using HelloWorld.Registries;
+using HelloWorld.Registries.Tile;
 using Microsoft.Xna.Framework;
 
 namespace HelloWorld.Core;
@@ -55,7 +56,7 @@ public class Tile : ITile
         else return UVshapes[0];
     }
 
-    public TileRegistryEntry GetRegistryEntry()
+    public TileDef GetDef()
     {
         return Registry.GetTile(id);
     }

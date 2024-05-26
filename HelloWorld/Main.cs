@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 using HelloWorld.Core;
+using HelloWorld.Events;
 using HelloWorld.Graphics;
 using HelloWorld.Registries;
 
@@ -51,13 +52,13 @@ public class Main : Game
         }
     }
 
-    private IPlayerRenderer clientPlayerRenderer;
+    private PlayerRenderer clientPlayerRenderer;
     private CursorRenderer cursorRenderer;
     private InventoryRenderer inventoryRenderer;
 
-    public static readonly TileRegistry TileRegistry = new TileRegistry();
-    public static readonly SoundRegistry SoundRegistry = new SoundRegistry();
-    public static readonly ItemRegistry ItemRegistry = new ItemRegistry();
+    private readonly Registries.Tile.TileRegistry TileRegistry = new();
+    private readonly Registries.Sound.SoundRegistry SoundRegistry = new();
+    private readonly Registries.Item.ItemRegistry ItemRegistry = new();
 
     private static KeyboardState _keyboardState;
     private static GamePadState _gamePadState;
@@ -71,6 +72,17 @@ public class Main : Game
 
     private static bool _debugMode = false;
     public static bool DebugModeEnabled => _debugMode;
+
+    public static class GlobalEvents
+    {
+        public delegate void GlobalEventHandler<TEventArgs>(TEventArgs e);
+
+        public static event GlobalEventHandler<TileEvent> onTilePlace;
+        public static event GlobalEventHandler<TileEvent> onTileUpdated;
+
+        public static void DoTilePlace(TileEvent e) => onTilePlace?.Invoke(e);
+        public static void DoTileUpdate(TileEvent e) => onTileUpdated?.Invoke(e);
+    }
 
     public Main()
     {
@@ -101,6 +113,8 @@ public class Main : Game
         TileRegistry.Register();
         ItemRegistry.Register();
 
+        Level = new Level(GraphicsDevice);
+
         Player = new Player()
         {
             position = new Vector2(320 / 2, 180 / 2)
@@ -118,8 +132,6 @@ public class Main : Game
         );
 
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-        Level = new Level(GraphicsDevice);
         clientPlayerRenderer = new PlayerRenderer(GraphicsDevice);
         cursorRenderer = new CursorRenderer(GraphicsDevice);
         inventoryRenderer = new InventoryRenderer(GraphicsDevice, Player.Inventory);
@@ -176,43 +188,53 @@ public class Main : Game
 
         Player.Update(delta);
 
+        bool playerItemPlaceable = false;
+
         var mouseTile = Level.GetTileAtPosition(MouseWorldPos);
-        if(mouseTile != null)
+        var mouseTilePos = Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize;
+        if(mouseTile != null && Player.IsHoldingTileItem())
         {
-            if(mouseTile.id == "air" || !Player.IsHoldingTileItem())
+            if(mouseTile.id == "air" && Player.IsHoldingPlaceable())
             {
-                if
-                (
-                    Player.IsHoldingPlaceable()
-                    && (
-                        Level.TileMeeting(new Rectangle((Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize - Vector2.UnitX).ToPoint(), new Point(10, 8))) ||
-                        Level.TileMeeting(new Rectangle((Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize - Vector2.UnitY).ToPoint(), new Point(8, 10)))
-                    )
+                if(
+                    Level.TileMeeting(new Rectangle((mouseTilePos - Vector2.UnitX).ToPoint(), new Point(10, 8))) ||
+                    Level.TileMeeting(new Rectangle((mouseTilePos - Vector2.UnitY).ToPoint(), new Point(8, 10)))
                 )
                 {
-                    cursorRenderer.CursorPos = Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize;
+                    playerItemPlaceable = true;
+
+                    cursorRenderer.CursorPos = mouseTilePos;
                     cursorRenderer.State = CursorRenderer.DrawState.Visible;
 
                     cursorRenderer.positionInvalid = Vector2.Distance(
                         Player.Center - Vector2.UnitY * 3 * Level.tileSize,
-                        Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize
+                        mouseTilePos
                     ) > 6 * Level.tileSize;
                 }
-                else
-                    cursorRenderer.State = CursorRenderer.DrawState.Hidden;
+                else cursorRenderer.State = CursorRenderer.DrawState.Hidden;
             }
-            else if(!Player.IsHoldingPlaceable())
+            else if(mouseTile.id != "air")
             {
-                cursorRenderer.CursorPos = Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize;
+                cursorRenderer.CursorPos = mouseTilePos;
                 cursorRenderer.State = CursorRenderer.DrawState.Visible;
 
                 cursorRenderer.positionInvalid = Vector2.Distance(
                     Player.Center - Vector2.UnitY * 3 * Level.tileSize,
-                    Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize + Vector2.One * (Level.tileSize / 2f)
+                    mouseTilePos + Vector2.One * (Level.tileSize / 2f)
                 ) > 6 * Level.tileSize;
             }
-            else
-                cursorRenderer.State = CursorRenderer.DrawState.Hidden;
+            else cursorRenderer.State = CursorRenderer.DrawState.Hidden;
+        }
+        else cursorRenderer.State = CursorRenderer.DrawState.Hidden;
+
+        if(playerItemPlaceable && MouseState.LeftButton.HasFlag(ButtonState.Pressed))
+        {
+            var pos = (mouseTilePos / Level.tileSize).ToPoint();
+            var def = Player.HeldItem.GetDef<Registries.Item.TileItemDef>();
+
+            def.CreateTile(Level, pos);
+
+            GlobalEvents.DoTilePlace(new TileEvent(pos, Player, Player.HeldItem.id));
         }
 
         cursorRenderer.Update(delta);
@@ -222,20 +244,18 @@ public class Main : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        DrawContext drawContext = new DrawContext(gameTime, _spriteBatch);
-
         GraphicsDevice.SetRenderTarget(renderTarget);
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
+        Level.Draw(gameTime);
+
         clientPlayerRenderer.DrawPlayer(Player);
 
-        Level.Draw(drawContext);
+        cursorRenderer.Draw(gameTime);
 
-        cursorRenderer.Draw(drawContext);
-
-        inventoryRenderer.Draw(drawContext);
+        inventoryRenderer.Draw(gameTime);
 
         string fps = "fps:" + (int)MathHelper.Max(0f, (float)(1 / gameTime.ElapsedGameTime.TotalSeconds));
 

@@ -1,10 +1,14 @@
+using System;
 using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
 
-namespace HelloWorld.Registries;
+using HelloWorld.Events;
+using HelloWorld.Core;
 
-[System.Serializable]
+namespace HelloWorld.Registries.Item;
+
+[Serializable]
 public class ItemOptions
 {
     public int maxStack = 999;
@@ -17,7 +21,7 @@ public class ItemOptions
 
 public class ItemOptionsBuilder
 {
-    private ItemOptions options = ItemOptions.Default;
+    private readonly ItemOptions options = ItemOptions.Default;
 
     public ItemOptions build()
     {
@@ -49,17 +53,15 @@ public class ItemOptionsBuilder
     }
 }
 
-public class ItemRegistryEntry : IRegistryEntry
+public class ItemDef : IRegistryEntry
 {
     public readonly ItemOptions settings;
 
-    public ItemRegistryEntry(string id, ItemOptions settings)
+    public ItemDef(string id, ItemOptions settings = null)
     {
         this.ID = id;
-        this.settings = settings!;
+        this.settings = settings ?? ItemOptions.Default;
     }
-
-    public ItemRegistryEntry(string id) : this(id, ItemOptions.Default) {}
 
     public string GetTexturePath()
     {
@@ -67,28 +69,25 @@ public class ItemRegistryEntry : IRegistryEntry
     }
 }
 
-public class TileItemRegistryEntry : ItemRegistryEntry
+public class TileItemDef : ItemDef
 {
-    public TileItemRegistryEntry(string id, ItemOptions settings) : base(id, settings) {}
-    public TileItemRegistryEntry(string id) : base(id) {}
+    public TileItemDef(string id, ItemOptions settings) : base(id, settings) {}
 
-    public virtual void OnPlace()
+    public virtual void CreateTile(Level level, Point position)
     {
-        
+        level.SetTile(ID, position);
     }
 }
 
-public class ItemRegistry : GenericRegistry<ItemRegistryEntry>
+public class ItemRegistry : GenericRegistry<ItemDef>
 {
-    public override Dictionary<string, ItemRegistryEntry> registry => Registry.ItemRegistry;
+    public static readonly ItemDef MISSING = new("Missing");
 
-    readonly ItemRegistryEntry MISSING = new("Missing");
-
-    readonly ItemRegistryEntry IRON_PICKAXE = new("IronPickaxe",
+    public static readonly ItemDef IRON_PICKAXE = new("IronPickaxe",
         new ItemOptionsBuilder().MaxStacks(1).Pickaxe().build()
     );
 
-    readonly TileItemRegistryEntry STONE = new("Stone",
+    public static readonly TileItemDef STONE = new("Stone",
         new ItemOptionsBuilder().Tile().build()
     );
 

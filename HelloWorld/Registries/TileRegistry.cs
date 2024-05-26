@@ -1,7 +1,11 @@
 using System.Collections.Generic;
+
 using Microsoft.Xna.Framework;
 
-namespace HelloWorld.Registries;
+using HelloWorld.Events;
+using System;
+
+namespace HelloWorld.Registries.Tile;
 
 [System.Serializable]
 public class TileOptions
@@ -11,25 +15,28 @@ public class TileOptions
     public static TileOptions Default => new TileOptions();
 }
 
-public class TileRegistryEntry : IRegistryEntry
+public class TileDef : IRegistryEntry
 {
     public readonly TileOptions settings;
 
-    public TileRegistryEntry(string id, TileOptions settings)
+    public TileDef(string id, TileOptions? settings)
     {
         this.ID = id;
-        this.settings = settings!;
+        this.settings = settings ?? TileOptions.Default;
+
+        Main.GlobalEvents.onTilePlace += GlobalEvents_onPlace;
+        Main.GlobalEvents.onTileUpdated += GlobalEvents_onUpdated;
     }
 
-    public TileRegistryEntry(string id) : this(id, TileOptions.Default) {}
+    public virtual void GlobalEvents_onPlace(TileEvent e) {}
+
+    public virtual void GlobalEvents_onUpdated(TileEvent e) {}
 }
 
-public class TileRegistry : GenericRegistry<TileRegistryEntry>
+public class TileRegistry : GenericRegistry<TileDef>
 {
-    public override Dictionary<string, TileRegistryEntry> registry => Registry.TileRegistry;
-
-    readonly TileRegistryEntry AIR = new TileRegistryEntry("air", new TileOptions{isAir = true});
-    readonly TileRegistryEntry STONE = new TileRegistryEntry("stone");
+    public static readonly TileDef AIR = new TileDef("air", new TileOptions{isAir = true});
+    public static readonly TileDef STONE = new TileDef("stone", null);
 
     public override void Register()
     {
