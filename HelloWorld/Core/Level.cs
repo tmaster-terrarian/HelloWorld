@@ -128,9 +128,9 @@ public class Level : IDisposable, IDrawable
     {
         var _area = ValidateArea(area);
 
-        for(int x = _area.X; x < _area.Width; x++)
+        for(int x = _area.X; x < _area.X + _area.Width; x++)
         {
-            for(int y = _area.Y; y < _area.Height; y++)
+            for(int y = _area.Y; y < _area.Y + _area.Height; y++)
             {
                 Tile tile = _tiles[x, y];
 
@@ -164,15 +164,12 @@ public class Level : IDisposable, IDrawable
     {
         var area = new Rectangle(rectangle.Location, rectangle.Size);
 
-        if(area == Rectangle.Empty) area = new Rectangle(0, 0, 1, 1);
-
-        area.X = Math.Clamp(area.X, 0, width - 1);
-        area.Y = Math.Clamp(area.Y, 0, width - 1);
-
-        if(area.X + area.Width > width) area.Width -= area.X + area.Width - width;
-        if(area.Y + area.Height > height) area.Height -= area.Y + area.Height - height;
-
-        return area;
+        return new(
+            Math.Clamp(rectangle.X, 0, width - 1),
+            Math.Clamp(rectangle.Y, 0, height - 1),
+            Math.Clamp(rectangle.X + rectangle.Width, rectangle.X + 1, width) - rectangle.X,
+            Math.Clamp(rectangle.Y + rectangle.Height, rectangle.Y + 1, height) - rectangle.Y
+        );
     }
 
     public void LoadContent()
@@ -201,8 +198,8 @@ public class Level : IDisposable, IDrawable
                 Tile tile = _tiles[x, y];
                 if(tile.id == "air") continue;
 
-                Texture2D texture;
-                if(!_textureCache.TryGetValue(tile.id, out texture)) continue;
+                Texture2D texture = Main.ContentManager.Load<Texture2D>("Images/Tiles/" + tile.id);
+                if(texture == null) continue;
 
                 Rectangle UV = Tile.GetShapeUV(tile.shape);
                 UV.X *= tileSize;
@@ -273,14 +270,11 @@ public class Level : IDisposable, IDrawable
 
     public void SetTile(string id, Point position)
     {
-        int x = position.X;
-        int y = position.Y;
+        if(!InWorld(position.X, position.Y)) return;
 
-        if(!InWorld(x, y)) return;
+        _tiles[position.X, position.Y] = new Tile(id);
 
-        _tiles[x, y] = new Tile(id);
-
-        RefreshTileShapes(new Rectangle(new Point(position.X - 2, position.Y - 2), new Point(5, 5)));
+        RefreshTileShapes(new Rectangle(new Point(position.X - 1, position.Y - 1), new Point(3, 3)));
     }
 
     public static bool InWorld(Level level, int x, int y)

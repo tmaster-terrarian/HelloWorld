@@ -35,8 +35,8 @@ public class Tile : ITile
 
     public Tile()
     {
-        id = "air";
-        shape = 0;
+        this.id = "air";
+        this.shape = 0;
     }
 
     public Tile(string id, byte shape = 0)
