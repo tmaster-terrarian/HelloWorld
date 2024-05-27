@@ -1,4 +1,5 @@
 using System;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -26,7 +27,7 @@ public class InventoryRenderer : IDrawable
 
     public void LoadContent()
     {
-        slotTexture = Main.ContentManager.Load<Texture2D>("Images/UI/slot");
+        slotTexture = Main.GetAsset<Texture2D>("Images/UI/slot");
     }
 
     public void Draw(GameTime gameTime)
@@ -44,7 +45,7 @@ public class InventoryRenderer : IDrawable
 
             var def = item.GetDef();
 
-            var tex = Main.ContentManager.Load<Texture2D>(def.GetTexturePath());
+            var tex = Main.GetAsset<Texture2D>(def.GetTexturePath());
             if(tex is null) continue;
 
             Rectangle? rect = null;

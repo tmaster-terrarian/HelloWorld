@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-
+using HelloWorld.Events;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -106,6 +106,31 @@ public class Level : IDisposable, IDrawable
 
         _collisions = new Rectangle[width, height];
         // RefreshTileShapes(Bounds);
+
+        Main.GlobalEvents.onTilePlaced += GlobalEvents_onTilePlaced;
+        Main.GlobalEvents.onTileUpdated += GlobalEvents_onTileUpdated;
+    }
+
+    protected virtual void GlobalEvents_onTilePlaced(TileEvent e)
+    {
+        
+    }
+
+    protected virtual void GlobalEvents_onTileUpdated(TileEvent e)
+    {
+        
+    }
+
+    public Rectangle ValidateArea(Rectangle rectangle)
+    {
+        var area = new Rectangle(rectangle.Location, rectangle.Size);
+
+        return new(
+            Math.Clamp(rectangle.X, 0, width - 1),
+            Math.Clamp(rectangle.Y, 0, height - 1),
+            Math.Clamp(rectangle.X + rectangle.Width, rectangle.X + 1, width) - rectangle.X,
+            Math.Clamp(rectangle.Y + rectangle.Height, rectangle.Y + 1, height) - rectangle.Y
+        );
     }
 
     public void RefreshTileShapes(Rectangle area)
@@ -125,50 +150,56 @@ public class Level : IDisposable, IDrawable
 
                 if(tile.id == "air") continue;
 
-                byte matches = 0b0000;
-
-                if((y > 0 && _tiles[x, y - 1].id == tile.id) || y <= 0)
-                    matches |= 0b0001;
-
-                if((x < width - 1 && _tiles[x + 1, y].id == tile.id) || x >= width - 1)
-                    matches |= 0b0010;
-
-                if((y < height - 1 && _tiles[x, y + 1].id == tile.id) || y >= height - 1)
-                    matches |= 0b0100;
-
-                if((x > 0 && _tiles[x - 1, y].id == tile.id) || x <= 0)
-                    matches |= 0b1000;
-
-                tile.shape = matches;
+                RefreshTileShape(tile, x, y);
             }
         }
     }
 
-    public Rectangle ValidateArea(Rectangle rectangle)
+    private void RefreshTileShape(Tile tile, int x, int y)
     {
-        var area = new Rectangle(rectangle.Location, rectangle.Size);
+        byte matches = 0b0000;
 
-        return new(
-            Math.Clamp(rectangle.X, 0, width - 1),
-            Math.Clamp(rectangle.Y, 0, height - 1),
-            Math.Clamp(rectangle.X + rectangle.Width, rectangle.X + 1, width) - rectangle.X,
-            Math.Clamp(rectangle.Y + rectangle.Height, rectangle.Y + 1, height) - rectangle.Y
-        );
+        if((y > 0 && _tiles[x, y - 1].id == tile.id) || y <= 0)
+            matches |= 0b0001;
+
+        if((x < width - 1 && _tiles[x + 1, y].id == tile.id) || x >= width - 1)
+            matches |= 0b0010;
+
+        if((y < height - 1 && _tiles[x, y + 1].id == tile.id) || y >= height - 1)
+            matches |= 0b0100;
+
+        if((x > 0 && _tiles[x - 1, y].id == tile.id) || x <= 0)
+            matches |= 0b1000;
+
+        tile.shape = matches;
+    }
+
+    public void UpdateNeighbors(TileEvent e)
+    {
+        Point tilePosition = e.TilePos;
+
+        for(int x = Math.Max(tilePosition.X - 1, 0); x <= Math.Min(tilePosition.X + 1, width - 1); x++)
+        {
+            for(int y = Math.Max(tilePosition.Y - 1, 0); y <= Math.Min(tilePosition.Y + 1, height - 1); y++)
+            {
+                if(x == tilePosition.X && y == tilePosition.Y) continue;
+
+                var tile = _tiles[x, y];
+
+                var def = tile.GetDef();
+
+                if((x == tilePosition.X && y == 0) || (x == 0 && y == tilePosition.Y) || (x == tilePosition.X + 1 && y == tilePosition.Y) || (x == tilePosition.X && y == tilePosition.Y + 1))
+                {
+                    def.OnUpdate(e);
+                    Main.GlobalEvents.DoTileUpdate(e);
+                }
+            }
+        }
     }
 
     public void LoadContent()
     {
-        // for(int x = 0; x < width; x++)
-        // {
-        //     for(int y = 0; y < height; y++)
-        //     {
-        //         Tile tile = _tiles[x, y];
-        //         if(!_textureCache.ContainsKey(tile.id))
-        //         {
-        //             _textureCache.Add(tile.id, Main.ContentManager.Load<Texture2D>("Images/Tiles/" + tile.id));
-        //         }
-        //     }
-        // }
+        
     }
 
     public void Draw(GameTime gameTime)
@@ -182,7 +213,7 @@ public class Level : IDisposable, IDrawable
                 Tile tile = _tiles[x, y];
                 if(tile.id == "air") continue;
 
-                Texture2D texture = Main.ContentManager.Load<Texture2D>("Images/Tiles/" + tile.id);
+                Texture2D texture = Main.GetAsset<Texture2D>("Images/Tiles/" + tile.id);
                 if(texture == null) continue;
 
                 Rectangle UV = Tile.GetShapeUV(tile.shape);
@@ -266,8 +297,18 @@ public class Level : IDisposable, IDrawable
         return x >= 0 && x < level.width && y >= 0 && y < level.height;
     }
 
+    public static bool InWorld(Level level, Point pos)
+    {
+        return InWorld(level, pos.X, pos.Y);
+    }
+
     public bool InWorld(int x, int y)
     {
-        return x >= 0 && x < width && y >= 0 && y < height;
+        return InWorld(this, x, y);
+    }
+
+    public bool InWorld(Point pos)
+    {
+        return InWorld(pos.X, pos.Y);
     }
 }

@@ -86,8 +86,47 @@ public static class Input
 
     public static bool GetReleased(Buttons button) => GetReleased(button, PlayerIndex.One);
 
-    public static int GetScrollDelta()
+    public static bool Get(MouseButtons button)
+    {
+        return GetMouseButtonState(currentMouseState, button) == ButtonState.Pressed;
+    }
+
+    public static bool GetPressed(MouseButtons button)
+    {
+        return GetMouseButtonState(currentMouseState, button) == ButtonState.Pressed && GetMouseButtonState(previousMouseState, button) == ButtonState.Released;
+    }
+
+    public static bool GetReleased(MouseButtons button)
+    {
+        return GetMouseButtonState(currentMouseState, button) == ButtonState.Released && GetMouseButtonState(previousMouseState, button) == ButtonState.Pressed;
+    }
+
+    static ButtonState GetMouseButtonState(MouseState state, MouseButtons button)
+    {
+        return button switch
+        {
+            MouseButtons.LeftButton => state.LeftButton,
+            MouseButtons.RightButton => state.RightButton,
+            MouseButtons.MiddleButton => state.MiddleButton,
+            MouseButtons.XButton1 => state.XButton1,
+            MouseButtons.XButton2 => state.XButton2,
+            _ => ButtonState.Released,
+        };
+    }
+
+    public static ButtonState GetMouseButtonState(MouseButtons button) => GetMouseButtonState(currentMouseState, button);
+
+    public static int GetScrollDirection()
     {
         return System.Math.Sign(currentMouseState.ScrollWheelValue - previousMouseState.ScrollWheelValue);
     }
+}
+
+public enum MouseButtons
+{
+    LeftButton,
+    RightButton,
+    MiddleButton,
+    XButton1,
+    XButton2
 }

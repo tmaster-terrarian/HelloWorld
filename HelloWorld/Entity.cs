@@ -1,6 +1,8 @@
 using System;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+
 using HelloWorld.Core;
 using HelloWorld.Graphics;
 
@@ -17,7 +19,11 @@ public abstract class Entity
 
     protected float _layer { get; private set; }
 
+    protected bool _noTileCollision = false;
+
     public Level level { get; set; } = Main.Level;
+
+    public bool NoCollision => _noTileCollision;
 
     public int Layer
     {
@@ -27,8 +33,7 @@ public abstract class Entity
 
     public Vector2 velocity = Vector2.Zero;
 
-    public bool noTileCollision = false;
-    public Vector2 remainderPosition = Vector2.Zero;
+    private Vector2 _remainderPosition = Vector2.Zero;
 
     public int facing = 1;
 
@@ -94,6 +99,7 @@ public abstract class Entity
     {
         velocity.X = 0;
     }
+
     public virtual void OnCollisionY()
     {
         velocity.Y = 0;
@@ -101,13 +107,13 @@ public abstract class Entity
 
     public void Move(Vector2 vel, bool onCollisionX = true, bool onCollisionY = true)
     {
-        remainderPosition += vel;
+        _remainderPosition += vel;
 
-        int moveX = (int)MathF.Round(remainderPosition.X);
-        remainderPosition.X -= moveX;
+        int moveX = (int)MathF.Round(_remainderPosition.X);
+        _remainderPosition.X -= moveX;
         int signX = MathF.Sign(moveX);
 
-        if(noTileCollision)
+        if(_noTileCollision)
             position.X += moveX;
         else for(var i = 0; i < MathF.Abs(moveX); i++)
         {
@@ -124,11 +130,11 @@ public abstract class Entity
             }
         }
 
-        int moveY = (int)MathF.Round(remainderPosition.Y);
-        remainderPosition.Y -= moveY;
+        int moveY = (int)MathF.Round(_remainderPosition.Y);
+        _remainderPosition.Y -= moveY;
         int signY = MathF.Sign(moveY);
 
-        if(noTileCollision)
+        if(_noTileCollision)
             position.Y += moveY;
         else for(var i = 0; i < MathF.Abs(moveY); i++)
         {

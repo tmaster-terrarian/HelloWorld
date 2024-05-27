@@ -61,7 +61,7 @@
 /processorParam:TextureFormat=Color
 /build:Images/Characters/player.png
 
-#begin Images/Item/IronPickaxe.png
+#begin Images/Item/iron_pickaxe.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -71,9 +71,9 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Images/Item/IronPickaxe.png
+/build:Images/Item/iron_pickaxe.png
 
-#begin Images/Item/Missing.png
+#begin Images/Item/missing.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -83,9 +83,9 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Images/Item/Missing.png
+/build:Images/Item/missing.png
 
-#begin Images/Item/Stone.png
+#begin Images/Item/stone.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -95,7 +95,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Images/Item/Stone.png
+/build:Images/Item/stone.png
 
 #begin Images/Other/onepixel.png
 /importer:TextureImporter

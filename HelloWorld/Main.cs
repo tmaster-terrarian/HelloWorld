@@ -29,9 +29,10 @@ public class Main : Game
         }
     }
 
+    static ContentManager ContentManager { get; set; }
+
     public static Level Level { get; private set; }
     public static Texture2D OnePixel { get; private set; }
-    public static ContentManager ContentManager { get; private set; }
     public static GameWindow MainWindow { get; private set; }
 
     public static Player Player;
@@ -77,11 +78,13 @@ public class Main : Game
     {
         public delegate void GlobalEventHandler<TEventArgs>(TEventArgs e);
 
-        public static event GlobalEventHandler<TileEvent> onTilePlace;
+        public static event GlobalEventHandler<TileEvent> onTilePlaced;
         public static event GlobalEventHandler<TileEvent> onTileUpdated;
+        public static event GlobalEventHandler<TileEvent> onTileDestroyed;
 
-        public static void DoTilePlace(TileEvent e) => onTilePlace?.Invoke(e);
+        public static void DoTilePlace(TileEvent e) => onTilePlaced?.Invoke(e);
         public static void DoTileUpdate(TileEvent e) => onTileUpdated?.Invoke(e);
+        public static void DoTileDestroy(TileEvent e) => onTileDestroyed?.Invoke(e);
     }
 
     public Main()
@@ -205,10 +208,11 @@ public class Main : Game
         Player.Update(delta);
 
         bool playerItemPlaceable = false;
+        bool playerItemMineable = false;
 
         var mouseTile = Level.GetTileAtPosition(MouseWorldPos);
         var mouseTilePos = Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize;
-        if(mouseTile != null && Player.IsHoldingTileItem())
+        if(mouseTile != null && Player.IsHoldingTileRelatedItem())
         {
             if(mouseTile.id == "air" && Player.IsHoldingPlaceable())
             {
@@ -231,6 +235,9 @@ public class Main : Game
             }
             else if(mouseTile.id != "air")
             {
+                var itemDef = Player.HeldItem.GetDef();
+                playerItemMineable = itemDef.settings.pickaxe;
+
                 cursorRenderer.CursorPos = mouseTilePos;
                 cursorRenderer.State = CursorRenderer.DrawState.Visible;
 
@@ -243,16 +250,38 @@ public class Main : Game
         }
         else cursorRenderer.State = CursorRenderer.DrawState.Hidden;
 
-        if(playerItemPlaceable && MouseState.LeftButton.HasFlag(ButtonState.Pressed))
+        if(playerItemPlaceable && Input.Get(MouseButtons.LeftButton))
         {
             var pos = (mouseTilePos / Level.tileSize).ToPoint();
-            var def = Player.HeldItem.GetDef<Registries.Item.TileItemDef>();
+            var itemDef = Player.HeldItem.GetDef<Registries.Item.TileItemDef>();
+            var tileDef = itemDef.GetTileDef();
 
-            def.CreateTile(Level, pos);
+            itemDef.CreateTile(Level, pos);
 
-            GlobalEvents.DoTilePlace(new TileEvent(pos, Player, Player.HeldItem.id));
+            var e = new TileEvent(pos, Player, Level.GetTileAtTilePosition(pos).id);
 
-            Level.RefreshTileShapes(Level.Bounds);
+            tileDef.OnPlace(e);
+            GlobalEvents.DoTilePlace(e);
+
+            Level.UpdateNeighbors(e);
+        }
+
+        if(playerItemMineable && Input.Get(MouseButtons.LeftButton))
+        {
+            var pos = (mouseTilePos / Level.tileSize).ToPoint();
+            var itemDef = Player.HeldItem.GetDef();
+            var tileDef = Level.GetTileAtTilePosition(pos).GetDef();
+
+            // tool capability checks here
+
+            var e = new TileEvent(pos, Player, Level.GetTileAtTilePosition(pos).id);
+
+            tileDef.OnDestroy(e);
+            GlobalEvents.DoTileDestroy(e);
+
+            Level.SetTile("air", pos);
+
+            Level.UpdateNeighbors(e);
         }
 
         cursorRenderer.Update(delta);
@@ -335,5 +364,24 @@ public class Main : Game
         _spriteBatch.End();
 
         base.Draw(gameTime);
+    }
+
+    public static Player NearestPlayerTo(Vector2 position)
+    {
+        // TODO: implement multiplayer
+        return Player;
+    }
+
+    public static T GetAsset<T>(string path)
+    {
+        try
+        {
+            return ContentManager.Load<T>(path);
+        }
+        catch(Exception e)
+        {
+            Console.Error.WriteLine(e);
+            return default;
+        }
     }
 }

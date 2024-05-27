@@ -24,13 +24,14 @@ public class Player : Entity
 
     public static event EventHandler<PlayerLandedEvent>? PlayerLanded;
 
+    private readonly int _baseReach = 6;
     private readonly PlayerInventory _inventory = new();
-    private int _selectedSlot = 0;
 
     public PlayerInventory Inventory => _inventory;
 
-    public int HeldItemSlot => _selectedSlot;
-    public ItemStack HeldItem => _inventory[_selectedSlot];
+    public int HeldItemSlot { get; set; } = 0;
+
+    public ItemStack HeldItem => _inventory[HeldItemSlot];
 
     public Player()
     {
@@ -38,8 +39,8 @@ public class Player : Entity
         height = 14;
         Layer = 3;
 
-        _inventory.TryInsert(new("IronPickaxe"), 0);
-        _inventory.TryInsert(new("Stone", 10), 2);
+        _inventory.TryInsert(new("iron_pickaxe"), 0);
+        _inventory.TryInsert(new("stone", 10), 2);
     }
 
     public void LoadContent()
@@ -119,23 +120,23 @@ public class Player : Entity
             velocity.Y = jumpSpeed;
         }
 
-        int slotSelectDir = -Input.GetScrollDelta();
+        int slotSelectDir = -Input.GetScrollDirection();
 
-        _selectedSlot += slotSelectDir;
+        HeldItemSlot += slotSelectDir;
 
-        if(_selectedSlot < 0) _selectedSlot = 9;
-        if(_selectedSlot > 9) _selectedSlot = 0;
+        if(HeldItemSlot < 0) HeldItemSlot = 9;
+        if(HeldItemSlot > 9) HeldItemSlot = 0;
 
-        if(Input.GetPressed(Keys.D1)) _selectedSlot = 0;
-        if(Input.GetPressed(Keys.D2)) _selectedSlot = 1;
-        if(Input.GetPressed(Keys.D3)) _selectedSlot = 2;
-        if(Input.GetPressed(Keys.D4)) _selectedSlot = 3;
-        if(Input.GetPressed(Keys.D5)) _selectedSlot = 4;
-        if(Input.GetPressed(Keys.D6)) _selectedSlot = 5;
-        if(Input.GetPressed(Keys.D7)) _selectedSlot = 6;
-        if(Input.GetPressed(Keys.D8)) _selectedSlot = 7;
-        if(Input.GetPressed(Keys.D9)) _selectedSlot = 8;
-        if(Input.GetPressed(Keys.D0)) _selectedSlot = 9;
+        if(Input.GetPressed(Keys.D1)) HeldItemSlot = 0;
+        if(Input.GetPressed(Keys.D2)) HeldItemSlot = 1;
+        if(Input.GetPressed(Keys.D3)) HeldItemSlot = 2;
+        if(Input.GetPressed(Keys.D4)) HeldItemSlot = 3;
+        if(Input.GetPressed(Keys.D5)) HeldItemSlot = 4;
+        if(Input.GetPressed(Keys.D6)) HeldItemSlot = 5;
+        if(Input.GetPressed(Keys.D7)) HeldItemSlot = 6;
+        if(Input.GetPressed(Keys.D8)) HeldItemSlot = 7;
+        if(Input.GetPressed(Keys.D9)) HeldItemSlot = 8;
+        if(Input.GetPressed(Keys.D0)) HeldItemSlot = 9;
 
         if(Input.Get(Keys.LeftControl))
         {
@@ -156,11 +157,12 @@ public class Player : Entity
         public Player Player { get; private set; }
     }
 
-    public bool IsHoldingTileItem()
+    public bool IsHoldingTileRelatedItem()
     {
         if(HeldItem is null) return false;
 
-        var settings = HeldItem.GetDef().settings;
+        var def = HeldItem.GetDef();
+        var settings = def.settings;
 
         if(settings.pickaxe || settings.tileItem) return true;
 
@@ -176,5 +178,15 @@ public class Player : Entity
         if(settings.tileItem) return true;
 
         return false;
+    }
+
+    public bool TileWithinReach(Vector2 position)
+    {
+        var distance = Vector2.Distance(
+            Center - Vector2.UnitY * 3 * Main.Level.tileSize,
+            MathUtil.Snap(position, Main.Level.tileSize) + Vector2.One * (Main.Level.tileSize / 2f)
+        );
+
+        return distance <= _baseReach * Main.Level.tileSize;
     }
 }

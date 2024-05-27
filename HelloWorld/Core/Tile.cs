@@ -1,16 +1,18 @@
+using Microsoft.Xna.Framework;
+
 using HelloWorld.Registries;
 using HelloWorld.Registries.Tile;
-using Microsoft.Xna.Framework;
 
 namespace HelloWorld.Core;
 
-public abstract class ITile
+public abstract class AbstractTile
 {
     public string id;
     public byte shape;
+    public float breakingProgress;
 }
 
-public class Tile : ITile
+public class Tile : AbstractTile
 {
     // 0000 : LBRT
 
@@ -47,7 +49,7 @@ public class Tile : ITile
 
     public override string ToString()
     {
-        return $"Tile({id})";
+        return $"Tile {id}";
     }
 
     public static Rectangle GetShapeUV(byte shape)

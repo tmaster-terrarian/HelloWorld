@@ -1,5 +1,5 @@
 using System;
-
+using HelloWorld.Events;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -76,11 +76,21 @@ public class CursorRenderer : IDrawable
     {
         _spriteBatch = new SpriteBatch(graphicsDevice);
         _spriteFrame = new Rectangle(0, 0, 16, 16);
+
+        // Main.GlobalEvents.onTilePlaced += GlobalEvents_onTileChanged;
+        // Main.GlobalEvents.onTileDestroyed += GlobalEvents_onTileChanged;
+    }
+
+    void GlobalEvents_onTileChanged(TileEvent e)
+    {
+        if(State != DrawState.Visible) return;
+
+        _spriteFrameID = 1;
     }
 
     public void LoadContent()
     {
-        _texture = Main.ContentManager.Load<Texture2D>("Images/UI/cursor");
+        _texture = Main.GetAsset<Texture2D>("Images/UI/cursor");
     }
 
     public void Update(float delta)
@@ -89,13 +99,13 @@ public class CursorRenderer : IDrawable
 
         _spriteFrameID = MathUtil.Approach(_spriteFrameID, 0, 0.2f * delta);
 
-        if(_lastTargetCursorPos != _targetCursorPos)
-        {
-            _spriteFrameID = 1;
-        }
-
         // uncomment for animation
-        // _spriteFrame.X = (int)MathF.Ceiling(_spriteFrameID) * 16;
+        // if(_lastTargetCursorPos != _targetCursorPos)
+        // {
+        //     _spriteFrameID = 1;
+        // }
+
+        _spriteFrame.X = (int)MathF.Ceiling(_spriteFrameID) * 16;
 
         _cursorPos = Vector2.LerpPrecise(_cursorPos, _targetCursorPos, 0.25f * delta);
     }

@@ -1,4 +1,5 @@
 using System;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -16,7 +17,7 @@ public class PlayerRenderer
 
     public void LoadContent()
     {
-        texture = Main.ContentManager.Load<Texture2D>("Images/Characters/player");
+        texture = Main.GetAsset<Texture2D>("Images/Characters/player");
     }
 
     public void DrawPlayer(Player player)

@@ -12,14 +12,13 @@ public class SoundSettings
     public static SoundSettings Default => new SoundSettings();
 }
 
-public class SoundDef : IRegistryEntry
+public class SoundDef : AbstractRegistryDef
 {
     public readonly SoundSettings settings;
     public SoundEffect sound = null;
 
-    public SoundDef(string id, SoundSettings? settings)
+    public SoundDef(SoundSettings? settings)
     {
-        this.ID = id;
         this.settings = settings ?? SoundSettings.Default;
     }
 
@@ -37,14 +36,12 @@ public class SoundDef : IRegistryEntry
 
 public class SoundRegistry : GenericRegistry<SoundDef>
 {
-    public static readonly SoundDef PLAYER_JUMP = new SoundDef("playerJump", new SoundSettings{volume = 0.25f});
-    public static readonly SoundDef PLAYER_LAND = new SoundDef("playerLand", new SoundSettings{volume = 0.5f});
-
-    static SoundEffect LoadSfx(string id) => Main.ContentManager.Load<SoundEffect>("Audio/Sfx/" + id);
+    public static readonly SoundDef PLAYER_JUMP = new SoundDef(new SoundSettings{volume = 0.25f});
+    public static readonly SoundDef PLAYER_LAND = new SoundDef(new SoundSettings{volume = 0.5f});
 
     public override void Register()
     {
-        Registry.RegisterSound(PLAYER_JUMP, LoadSfx(PLAYER_JUMP.ID));
-        Registry.RegisterSound(PLAYER_LAND, LoadSfx(PLAYER_LAND.ID));
+        Registry.RegisterSound("playerLand", PLAYER_JUMP);
+        Registry.RegisterSound("playerJump", PLAYER_LAND);
     }
 }
