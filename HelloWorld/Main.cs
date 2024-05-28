@@ -211,25 +211,21 @@ public class Main : Game
         bool playerItemMineable = false;
 
         var mouseTile = Level.GetTileAtPosition(MouseWorldPos);
-        var mouseTilePos = Vector2.Floor(MouseWorldPos / Level.tileSize) * Level.tileSize;
+        var mouseSnappedPos = MathUtil.Snap(MouseWorldPos, Level.tileSize);
+        var mouseTilePos = (mouseSnappedPos / Level.tileSize).ToPoint();
         if(mouseTile != null && Player.IsHoldingTileRelatedItem())
         {
             if(mouseTile.id == "air" && Player.IsHoldingPlaceable())
             {
-                if(
-                    Level.TileMeeting(new Rectangle((mouseTilePos - Vector2.UnitX).ToPoint(), new Point(10, 8))) ||
-                    Level.TileMeeting(new Rectangle((mouseTilePos - Vector2.UnitY).ToPoint(), new Point(8, 10)))
-                )
+                if(Level.TileMeeting(new((mouseSnappedPos - Vector2.UnitX).ToPoint(), new(Level.tileSize + 2, Level.tileSize)))
+                || Level.TileMeeting(new((mouseSnappedPos - Vector2.UnitY).ToPoint(), new(Level.tileSize, Level.tileSize + 2))))
                 {
                     playerItemPlaceable = true;
 
-                    cursorRenderer.CursorPos = mouseTilePos;
+                    cursorRenderer.CursorPos = mouseSnappedPos;
                     cursorRenderer.State = CursorRenderer.DrawState.Visible;
 
-                    cursorRenderer.positionInvalid = Vector2.Distance(
-                        Player.Center - Vector2.UnitY * 3 * Level.tileSize,
-                        mouseTilePos
-                    ) > 6 * Level.tileSize;
+                    cursorRenderer.positionInvalid = !Player.TileWithinReach(MouseWorldPos);
                 }
                 else cursorRenderer.State = CursorRenderer.DrawState.Hidden;
             }
@@ -238,21 +234,23 @@ public class Main : Game
                 var itemDef = Player.HeldItem.GetDef();
                 playerItemMineable = itemDef.settings.pickaxe;
 
-                cursorRenderer.CursorPos = mouseTilePos;
+                cursorRenderer.CursorPos = mouseSnappedPos;
                 cursorRenderer.State = CursorRenderer.DrawState.Visible;
 
-                cursorRenderer.positionInvalid = Vector2.Distance(
-                    Player.Center - Vector2.UnitY * 3 * Level.tileSize,
-                    mouseTilePos + Vector2.One * (Level.tileSize / 2f)
-                ) > 6 * Level.tileSize;
+                cursorRenderer.positionInvalid = !Player.TileWithinReach(MouseWorldPos);
             }
             else cursorRenderer.State = CursorRenderer.DrawState.Hidden;
         }
         else cursorRenderer.State = CursorRenderer.DrawState.Hidden;
 
+        playerItemPlaceable = playerItemPlaceable && Level.InWorld(mouseTilePos)
+            && !Player.Hitbox.Intersects(new(mouseSnappedPos.ToPoint(), new(Level.tileSize)));
+
+        playerItemMineable = playerItemMineable && Level.InWorld(mouseTilePos);
+
         if(playerItemPlaceable && Input.Get(MouseButtons.LeftButton))
         {
-            var pos = (mouseTilePos / Level.tileSize).ToPoint();
+            var pos = mouseTilePos;
             var itemDef = Player.HeldItem.GetDef<Registries.Item.TileItemDef>();
             var tileDef = itemDef.GetTileDef();
 
@@ -268,7 +266,7 @@ public class Main : Game
 
         if(playerItemMineable && Input.Get(MouseButtons.LeftButton))
         {
-            var pos = (mouseTilePos / Level.tileSize).ToPoint();
+            var pos = mouseTilePos;
             var itemDef = Player.HeldItem.GetDef();
             var tileDef = Level.GetTileAtTilePosition(pos).GetDef();
 

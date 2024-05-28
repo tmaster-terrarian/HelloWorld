@@ -271,9 +271,9 @@ public class Level : IDisposable, IDrawable
         return _tiles[x, y].id;
     }
 
-    public Tile GetTileAtPosition(Vector2 position) => GetTileAtTilePosition((position / tileSize).ToPoint());
+    public Tile? GetTileAtPosition(Vector2 position) => GetTileAtTilePosition((position / tileSize).ToPoint());
 
-    public Tile GetTileAtTilePosition(Point position)
+    public Tile? GetTileAtTilePosition(Point position)
     {
         int x = position.X;
         int y = position.Y;

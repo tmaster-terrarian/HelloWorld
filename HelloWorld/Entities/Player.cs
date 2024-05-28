@@ -183,7 +183,7 @@ public class Player : Entity
     public bool TileWithinReach(Vector2 position)
     {
         var distance = Vector2.Distance(
-            Center - Vector2.UnitY * 3 * Main.Level.tileSize,
+            Center - Vector2.UnitY * 2 * Main.Level.tileSize,
             MathUtil.Snap(position, Main.Level.tileSize) + Vector2.One * (Main.Level.tileSize / 2f)
         );
 
