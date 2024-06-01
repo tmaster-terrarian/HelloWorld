@@ -73,7 +73,7 @@ public class Player : Entity
 
         if(inputDir == 1)
         {
-            facing = 1;
+            Facing = 1;
             if(velocity.X < 0)
             {
                 MathUtil.Approach(ref velocity.X, 0, fric * delta);
@@ -89,7 +89,7 @@ public class Player : Entity
         }
         else if(inputDir == -1)
         {
-            facing = -1;
+            Facing = -1;
             if(-velocity.X < 0)
             {
                 MathUtil.Approach(ref velocity.X, 0, fric * delta);

@@ -50,7 +50,7 @@ public class PlayerRenderer
             rotation,
             pivotPoint,
             1,
-            SpriteEffects.FlipHorizontally & (SpriteEffects)Math.Max(0, -player.facing),
+            SpriteEffects.FlipHorizontally & (SpriteEffects)Math.Max(0, -player.Facing),
             0.5f
         );
 

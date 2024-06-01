@@ -35,7 +35,9 @@ public abstract class Entity
 
     private Vector2 _remainderPosition = Vector2.Zero;
 
-    public int facing = 1;
+    private int facing = 1;
+
+    public int Facing { get => facing; set => facing = value; }
 
     public Vector2 Size
     {
