@@ -95,7 +95,9 @@ public abstract class Entity
 
     public virtual Vector2 RenderPosition => position;
 
-    public virtual void Update(float delta) {}
+    public virtual void Update() {}
+
+    public virtual void Draw() {}
 
     public virtual void OnCollisionX()
     {

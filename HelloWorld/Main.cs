@@ -166,6 +166,11 @@ public class Main : Game
 
         Level.SetTile("stone", new(16, 16));
 
+        Level.SetTile("brick", new(13, Level.height - 3));
+        Level.GetTileAtTilePosition(new(13, Level.height - 3)).half = true;
+
+        Level.SetTile("brick", new(12, Level.height - 3));
+
         clientPlayerRenderer.LoadContent();
         Player.LoadContent();
 
@@ -205,10 +210,10 @@ public class Main : Game
 
         if(inputVector != Vector2.Zero) inputVector.Normalize();
 
-        Player.Update(delta);
+        Player.Update();
 
         bool playerItemPlaceable = false;
-        bool playerItemMineable = false;
+        bool playerItemCanMine = false;
 
         var mouseTile = Level.GetTileAtPosition(MouseWorldPos);
         var mouseSnappedPos = MathUtil.Snap(MouseWorldPos, Level.tileSize);
@@ -217,8 +222,8 @@ public class Main : Game
         {
             if(mouseTile.id == "air" && Player.IsHoldingPlaceable())
             {
-                if(Level.TileMeeting(new((mouseSnappedPos - Vector2.UnitX).ToPoint(), new(Level.tileSize + 2, Level.tileSize)))
-                || Level.TileMeeting(new((mouseSnappedPos - Vector2.UnitY).ToPoint(), new(Level.tileSize, Level.tileSize + 2))))
+                if(Level.TileMeeting(new((mouseSnappedPos - Vector2.UnitX * 5).ToPoint(), new(Level.tileSize + 10, Level.tileSize)))
+                || Level.TileMeeting(new((mouseSnappedPos - Vector2.UnitY * 5).ToPoint(), new(Level.tileSize, Level.tileSize + 10))))
                 {
                     playerItemPlaceable = true;
 
@@ -232,7 +237,7 @@ public class Main : Game
             else if(mouseTile.id != "air")
             {
                 var itemDef = Player.HeldItem.GetDef();
-                playerItemMineable = itemDef.settings.pickaxe;
+                playerItemCanMine = itemDef.settings.pickaxe;
 
                 cursorRenderer.CursorPos = mouseSnappedPos;
                 cursorRenderer.State = CursorRenderer.DrawState.Visible;
@@ -246,7 +251,7 @@ public class Main : Game
         playerItemPlaceable = playerItemPlaceable && Level.InWorld(mouseTilePos)
             && !Player.Hitbox.Intersects(new(mouseSnappedPos.ToPoint(), new(Level.tileSize)));
 
-        playerItemMineable = playerItemMineable && Level.InWorld(mouseTilePos);
+        playerItemCanMine = playerItemCanMine && Level.InWorld(mouseTilePos);
 
         if(playerItemPlaceable && Input.Get(MouseButtons.LeftButton))
         {
@@ -264,7 +269,7 @@ public class Main : Game
             Level.UpdateNeighbors(e);
         }
 
-        if(playerItemMineable && Input.Get(MouseButtons.LeftButton))
+        if(playerItemCanMine && Input.Get(MouseButtons.LeftButton))
         {
             var pos = mouseTilePos;
             var itemDef = Player.HeldItem.GetDef();
@@ -282,7 +287,7 @@ public class Main : Game
             Level.UpdateNeighbors(e);
         }
 
-        cursorRenderer.Update(delta);
+        cursorRenderer.Update();
 
         base.Update(gameTime);
     }

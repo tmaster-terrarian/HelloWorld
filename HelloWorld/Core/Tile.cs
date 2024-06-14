@@ -10,6 +10,7 @@ public abstract class AbstractTile
     public string id;
     public byte shape;
     public float breakingProgress;
+    public bool half;
 }
 
 public class Tile : AbstractTile

@@ -20,7 +20,7 @@ public class Level : IDisposable, IDrawable
             return new Rectangle(0, 0, width, height);
         }
     }
-    public readonly int tileSize = 8;
+    public const int tileSize = 8;
 
     private Rectangle[,] _collisions = null;
 
@@ -39,6 +39,12 @@ public class Level : IDisposable, IDrawable
 
                     if(tile.id != "air")
                         rect = new Rectangle(x * tileSize, y * tileSize, tileSize, tileSize);
+
+                    if(tile.half)
+                    {
+                        rect.Y += tileSize / 2;
+                        rect.Height = tileSize / 2;
+                    }
 
                     rectangles[x, y] = rect;
                 }
@@ -59,12 +65,11 @@ public class Level : IDisposable, IDrawable
     {
         if(Main.DebugModeEnabled && drawCollisionsOnDebug && !_collisionChecks.Contains(rect)) _collisionChecks.Add(rect);
 
-        Rectangle[,] cols = Collisions;
         for(int x = 0; x < width; x++)
         {
             for(int y = 0; y < height; y++)
             {
-                var r = cols[x, y];
+                var r = Collisions[x, y];
 
                 if(rect.Intersects(r)) return _tiles[x, y];
             }
@@ -146,6 +151,13 @@ public class Level : IDisposable, IDrawable
                 Rectangle rect = new Rectangle(-10000, -10000, 1, 1);
                 if(tile.id != "air")
                     rect = new Rectangle(x * tileSize, y * tileSize, tileSize, tileSize);
+
+                if(tile.half)
+                {
+                    rect.Y += tileSize / 2;
+                    rect.Height = tileSize / 2;
+                }
+
                 _collisions[x, y] = rect;
 
                 if(tile.id == "air") continue;
@@ -190,6 +202,11 @@ public class Level : IDisposable, IDrawable
 
                 if((x == tilePosition.X && y == 0) || (x == 0 && y == tilePosition.Y) || (x == tilePosition.X + 1 && y == tilePosition.Y) || (x == tilePosition.X && y == tilePosition.Y + 1))
                 {
+                    if(x == tilePosition.X && y == tilePosition.Y + 1 && _tiles[tilePosition.X, tilePosition.Y].id != "air" && tile.half)
+                    {
+                        tile.half = false;
+                    }
+
                     def.OnUpdate(e);
                     Main.GlobalEvents.DoTileUpdate(e);
                 }
@@ -222,9 +239,11 @@ public class Level : IDisposable, IDrawable
                 UV.Width *= tileSize;
                 UV.Height *= tileSize;
 
+                if(tile.half) UV.Height -= tileSize / 2;
+
                 _spriteBatch.Draw(
                     texture,
-                    new Vector2(x * tileSize, y * tileSize),
+                    new Vector2(x * tileSize, y * tileSize + (tile.half ? tileSize / 2 : 0)),
                     UV,
                     Color.White,
                     0,

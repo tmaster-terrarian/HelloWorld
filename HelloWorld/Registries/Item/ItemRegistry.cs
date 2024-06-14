@@ -87,12 +87,14 @@ public class ItemRegistry : GenericRegistry<ItemDef>
 
     public static readonly ItemDef IRON_PICKAXE = new ItemDef(new ItemOptions{ maxStack = 1, pickaxe = true });
 
-    public static readonly TileItemDef STONE = new TileItemDef(ItemOptions.DefaultTile);
+    public static readonly TileItemDef STONE_ITEM = new TileItemDef(ItemOptions.DefaultTile);
+    public static readonly TileItemDef BRICK_ITEM = new TileItemDef(ItemOptions.DefaultTile);
 
     public override void Register()
     {
         Registry.RegisterItem("missing", MISSING);
         Registry.RegisterItem("iron_pickaxe", IRON_PICKAXE);
-        Registry.RegisterItem("stone", STONE);
+        Registry.RegisterItem("stone", STONE_ITEM);
+        Registry.RegisterItem("brick", BRICK_ITEM);
     }
 }

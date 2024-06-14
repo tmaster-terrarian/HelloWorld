@@ -34,10 +34,12 @@ public class TileRegistry : GenericRegistry<TileDef>
 {
     public static readonly TileDef AIR = new TileDef(new TileOptions{isAir = true});
     public static readonly TileDef STONE = new TileDef(null);
+    public static readonly TileDef BRICK = new TileDef(null);
 
     public override void Register()
     {
         Registry.RegisterTile("air", AIR);
         Registry.RegisterTile("stone", STONE);
+        Registry.RegisterTile("brick", BRICK);
     }
 }

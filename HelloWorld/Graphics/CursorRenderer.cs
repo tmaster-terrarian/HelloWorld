@@ -93,11 +93,11 @@ public class CursorRenderer : IDrawable
         _texture = Main.GetAsset<Texture2D>("Images/UI/cursor");
     }
 
-    public void Update(float delta)
+    public void Update()
     {
-        _alpha = MathUtil.Approach(_alpha, _alphaTarget * (positionInvalid ? 0.5f : 1), _alphaRate * delta);
+        _alpha = MathUtil.Approach(_alpha, _alphaTarget * (positionInvalid ? 0.5f : 1), _alphaRate);
 
-        _spriteFrameID = MathUtil.Approach(_spriteFrameID, 0, 0.2f * delta);
+        _spriteFrameID = MathUtil.Approach(_spriteFrameID, 0, 0.2f);
 
         // uncomment for animation
         // if(_lastTargetCursorPos != _targetCursorPos)
@@ -107,7 +107,7 @@ public class CursorRenderer : IDrawable
 
         _spriteFrame.X = (int)MathF.Ceiling(_spriteFrameID) * 16;
 
-        _cursorPos = Vector2.LerpPrecise(_cursorPos, _targetCursorPos, 0.25f * delta);
+        _cursorPos = Vector2.LerpPrecise(_cursorPos, _targetCursorPos, 0.25f);
     }
 
     public void Draw(GameTime gameTime)
