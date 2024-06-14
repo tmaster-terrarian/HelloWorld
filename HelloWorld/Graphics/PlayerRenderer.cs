@@ -75,7 +75,7 @@ public class PlayerRenderer
         Rectangle bodyFrame = new(0, 0, 26, 36);
         Rectangle legFrame = new(0, 0, 26, 36);
         Rectangle armFrame = new(0, 0, 26, 36);
-        Rectangle eyelidFrame = new(26, 0, 26, 36);
+        Rectangle eyelidFrame = new(0, 0, 26, 36);
 
         position += new Vector2(6, 4);
 
@@ -91,16 +91,16 @@ public class PlayerRenderer
 
         var spriteEffects = SpriteEffects.FlipHorizontally & (SpriteEffects)Math.Max(0, -player.Facing);
 
-        _spriteBatch.Draw(
-            Main.OnePixel,
-            new Rectangle(player.Hitbox.X, player.Hitbox.Y, player.Hitbox.Width, player.Hitbox.Height),
-            null,
-            Color.Yellow * 0.5f,
-            0f,
-            Vector2.Zero,
-            SpriteEffects.None,
-            0
-        );
+        // _spriteBatch.Draw(
+        //     Main.OnePixel,
+        //     new Rectangle(player.Hitbox.X, player.Hitbox.Y, player.Hitbox.Width, player.Hitbox.Height),
+        //     null,
+        //     Color.Yellow * 0.5f,
+        //     0f,
+        //     Vector2.Zero,
+        //     SpriteEffects.None,
+        //     0
+        // );
 
         for(int i = 0; i < 3; i++)
         {
@@ -141,21 +141,6 @@ public class PlayerRenderer
             0
         );
 
-        for(int i = 5; i < 8; i++)
-        {
-            _spriteBatch.Draw(
-                _textures[i] ?? empty,
-                Vector2.Round(position),
-                legFrame,
-                Color.White,
-                rotation,
-                pivotPoint,
-                1,
-                spriteEffects,
-                0
-            );
-        }
-
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Arms] ?? empty,
             Vector2.Round(position),
@@ -191,6 +176,21 @@ public class PlayerRenderer
             spriteEffects,
             0
         );
+
+        for(int i = 5; i < 8; i++)
+        {
+            _spriteBatch.Draw(
+                _textures[i] ?? empty,
+                Vector2.Round(position),
+                legFrame,
+                Color.White,
+                rotation,
+                pivotPoint,
+                1,
+                spriteEffects,
+                0
+            );
+        }
 
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Chest] ?? empty,
@@ -264,15 +264,15 @@ public class PlayerRenderer
             0
         );
 
-        _spriteBatch.Draw(
-            Main.OnePixel,
-            new Rectangle((player.Center - Vector2.One).ToPoint(), (Vector2.One * 2).ToPoint()),
-            null,
-            Color.Red,
-            0f,
-            Vector2.Zero,
-            SpriteEffects.None,
-            0
-        );
+        // _spriteBatch.Draw(
+        //     Main.OnePixel,
+        //     new Rectangle((player.Center - Vector2.One).ToPoint(), (Vector2.One * 2).ToPoint()),
+        //     null,
+        //     Color.Red,
+        //     0f,
+        //     Vector2.Zero,
+        //     SpriteEffects.None,
+        //     0
+        // );
     }
 }
