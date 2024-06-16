@@ -9,17 +9,35 @@ namespace HelloWorld.Registries.Item;
 public class ItemOptions
 {
     public int maxStack = 999;
+
     public ItemRarity rarity = ItemRarity.Common;
-    public bool pickaxe = false;
-    public bool tileItem = false;
+
+    public bool placeable = false;
+    public bool tool = false;
+
+    public UseStyle useStyle = UseStyle.None;
+    public int useTime = 40;
+
+    public int pickaxePower = 10;
+
+    public DamageType damageType = DamageType.Harmless;
+    public int damage = 0;
 
     public static ItemOptions Default => new ItemOptions();
-    public static ItemOptions DefaultTile => new ItemOptions { tileItem = true };
+    public static ItemOptions DefaultTile => new ItemOptions { placeable = true, useTime = 18, useStyle = UseStyle.Swing };
+    public static ItemOptions DefaultTool => new ItemOptions { tool = true, maxStack = 1, useStyle = UseStyle.Swing };
 }
 
 public class ItemOptionsBuilder
 {
     private readonly ItemOptions options = ItemOptions.Default;
+
+    public ItemOptionsBuilder() {}
+
+    public ItemOptionsBuilder(ItemOptions options)
+    {
+        this.options = options;
+    }
 
     public ItemOptions build()
     {
@@ -38,15 +56,15 @@ public class ItemOptionsBuilder
         return this;
     }
 
-    public ItemOptionsBuilder Pickaxe(bool value = true)
+    public ItemOptionsBuilder Tile(bool value = true)
     {
-        options.pickaxe = value;
+        options.placeable = value;
         return this;
     }
 
-    public ItemOptionsBuilder Tile(bool value = true)
+    public ItemOptionsBuilder Tool(bool value = true)
     {
-        options.tileItem = value;
+        options.tool = value;
         return this;
     }
 }
@@ -70,6 +88,8 @@ public class TileItemDef : ItemDef
 {
     public TileItemDef(ItemOptions settings) : base(settings) {}
 
+    public TileItemDef() : this(ItemOptions.DefaultTile) {}
+
     public virtual void CreateTile(Level level, Point position)
     {
         level.SetTile(id, position);
@@ -81,20 +101,47 @@ public class TileItemDef : ItemDef
     }
 }
 
+public class ToolItemDef : ItemDef
+{
+    private ToolType type;
+
+    public ToolType ToolType => type;
+
+    public ToolItemDef(ItemOptions settings, ToolType type) : base(settings)
+    {
+        this.type = type;
+    }
+
+    public ToolItemDef(ToolType type) : this(ItemOptions.DefaultTool, type) {}
+}
+
 public class ItemRegistry : GenericRegistry<ItemDef>
 {
     public static readonly ItemDef MISSING = new ItemDef(ItemOptions.Default);
 
-    public static readonly ItemDef IRON_PICKAXE = new ItemDef(new ItemOptions{ maxStack = 1, pickaxe = true });
-
-    public static readonly TileItemDef STONE_ITEM = new TileItemDef(ItemOptions.DefaultTile);
-    public static readonly TileItemDef BRICK_ITEM = new TileItemDef(ItemOptions.DefaultTile);
-
     public override void Register()
     {
         Registry.RegisterItem("missing", MISSING);
-        Registry.RegisterItem("iron_pickaxe", IRON_PICKAXE);
-        Registry.RegisterItem("stone", STONE_ITEM);
-        Registry.RegisterItem("brick", BRICK_ITEM);
+        Registry.RegisterItem("iron_pickaxe", CreatePickaxe(15, 5, 22));
+        Registry.RegisterItem("stone", new TileItemDef());
+        Registry.RegisterItem("brick", new TileItemDef());
+        Registry.RegisterItem("dirt", new TileItemDef());
+    }
+
+    static ToolItemDef CreatePickaxe(int pickaxePower, int damage, int useTime = 30, DamageType damageType = DamageType.Melee, UseStyle useStyle = UseStyle.Swing)
+    {
+        var options = ItemOptions.DefaultTool;
+
+        options.pickaxePower = pickaxePower;
+        options.useTime = useTime;
+        options.useStyle = useStyle;
+
+        if(damage > 0)
+        {
+            options.damageType = damageType;
+            options.damage = damage;
+        }
+
+        return new ToolItemDef(options, ToolType.Pickaxe);
     }
 }

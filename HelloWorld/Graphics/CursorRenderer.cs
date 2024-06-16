@@ -5,11 +5,9 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace HelloWorld.Graphics;
 
-public class CursorRenderer : IDrawable
+public class CursorRenderer
 {
     private Texture2D _texture;
-
-    private readonly SpriteBatch _spriteBatch;
 
     private Vector2 _cursorPos = Vector2.Zero;
     private Vector2 _targetCursorPos = Vector2.Zero;
@@ -30,9 +28,6 @@ public class CursorRenderer : IDrawable
     private Rectangle _spriteFrame;
 
     public bool positionInvalid = false;
-
-    public event EventHandler<EventArgs> DrawOrderChanged;
-    public event EventHandler<EventArgs> VisibleChanged;
 
     public DrawState State
     {
@@ -68,13 +63,8 @@ public class CursorRenderer : IDrawable
         }
     }
 
-    public int DrawOrder => 0;
-
-    public bool Visible => true;
-
-    public CursorRenderer(GraphicsDevice graphicsDevice)
+    public CursorRenderer()
     {
-        _spriteBatch = new SpriteBatch(graphicsDevice);
         _spriteFrame = new Rectangle(0, 0, 16, 16);
 
         // Main.GlobalEvents.onTilePlaced += GlobalEvents_onTileChanged;
@@ -110,10 +100,8 @@ public class CursorRenderer : IDrawable
         _cursorPos = Vector2.LerpPrecise(_cursorPos, _targetCursorPos, 0.25f);
     }
 
-    public void Draw(GameTime gameTime)
+    public void Draw(SpriteBatch _spriteBatch)
     {
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-
         _spriteBatch.Draw(
             _texture,
             _cursorPos,
@@ -125,7 +113,5 @@ public class CursorRenderer : IDrawable
             SpriteEffects.None,
             1
         );
-
-        _spriteBatch.End();
     }
 }

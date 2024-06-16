@@ -10,7 +10,7 @@ namespace HelloWorld;
 
 public abstract class Entity
 {
-    public Vector2 position = Vector2.Zero;
+    public Point position = Point.Zero;
     public Vector2 scale = Vector2.One;
     public float angle = 0;
 
@@ -50,18 +50,18 @@ public abstract class Entity
 
     public Rectangle Hitbox
     {
-        get => new Rectangle((int)position.X, (int)position.Y, width, height);
+        get => new Rectangle(position.X, position.Y, width, height);
         set {
-            position = new Vector2(value.X, value.Y);
+            position = new(value.X, value.Y);
             width = value.Width;
             height = value.Height;
         }
     }
 
-    public Vector2 Center
+    public Point Center
     {
-        get => new Vector2(position.X + width / 2, position.Y + height / 2);
-        set => position = new Vector2(value.X - width / 2, value.Y - height / 2);
+        get => new (position.X + width / 2, position.Y + height / 2);
+        set => position = new(value.X - width / 2, value.Y - height / 2);
     }
 
     public int Left
@@ -93,11 +93,7 @@ public abstract class Entity
         }
     }
 
-    public virtual Vector2 RenderPosition => position;
-
-    public virtual void Update() {}
-
-    public virtual void Draw() {}
+    public virtual Vector2 RenderPosition => position.ToVector2();
 
     public virtual void OnCollisionX()
     {
@@ -121,9 +117,7 @@ public abstract class Entity
             position.X += moveX;
         else for(var i = 0; i < MathF.Abs(moveX); i++)
         {
-            Rectangle hitbox = Hitbox;
-
-            if(level.TileMeeting(RectangleHelper.Shift(hitbox, new Vector2(signX, 0))))
+            if(level.TileMeeting(Hitbox.Shift(signX, 0)))
             {
                 if(onCollisionX) OnCollisionX();
                 break;
@@ -142,9 +136,7 @@ public abstract class Entity
             position.Y += moveY;
         else for(var i = 0; i < MathF.Abs(moveY); i++)
         {
-            Rectangle hitbox = Hitbox;
-
-            if(level.TileMeeting(RectangleHelper.Shift(hitbox, new Vector2(0, signY))))
+            if(level.TileMeeting(Hitbox.Shift(0, signY)))
             {
                 if(onCollisionY) OnCollisionY();
                 break;

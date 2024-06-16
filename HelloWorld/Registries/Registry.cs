@@ -52,7 +52,7 @@ public static class Registry
 
     public static TileDef GetTile(string id)
     {
-        return TileRegistry.GetValueOrDefault(id) ?? TileRegistry["air"];
+        return TileRegistry.GetValueOrDefault(id) ?? Tile.TileRegistry.AIR;
     }
 
     public static SoundDef? GetSound(string id)
@@ -62,7 +62,7 @@ public static class Registry
 
     public static ItemDef GetItem(string id)
     {
-        return ItemRegistry.GetValueOrDefault(id) ?? ItemRegistry["missing"];
+        return ItemRegistry.GetValueOrDefault(id) ?? Item.ItemRegistry.MISSING;
     }
 }
 

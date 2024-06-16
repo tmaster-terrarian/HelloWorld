@@ -5,6 +5,18 @@ namespace HelloWorld;
 
 public static class Input
 {
+    static bool focused = true;
+
+    public static void Init()
+    {
+        Main.LostFocus += delegate {
+            focused = false;
+        };
+        Main.RegainedFocus += delegate {
+            focused = true;
+        };
+    }
+
     static KeyboardState currentKeyboardState;
     static KeyboardState previousKeyboardState;
 
@@ -52,32 +64,32 @@ public static class Input
 
     public static bool Get(Keys key)
     {
-        return currentKeyboardState.IsKeyDown(key);
+        return currentKeyboardState.IsKeyDown(key) && focused;
     }
 
     public static bool GetPressed(Keys key)
     {
-        return currentKeyboardState.IsKeyDown(key) && !previousKeyboardState.IsKeyDown(key);
+        return currentKeyboardState.IsKeyDown(key) && !previousKeyboardState.IsKeyDown(key) && focused;
     }
 
     public static bool GetReleased(Keys key)
     {
-        return !currentKeyboardState.IsKeyDown(key) && previousKeyboardState.IsKeyDown(key);
+        return !currentKeyboardState.IsKeyDown(key) && previousKeyboardState.IsKeyDown(key) && focused;
     }
 
     public static bool Get(Buttons button, PlayerIndex index)
     {
-        return currentGamepadStates[(int)index].IsButtonDown(button);
+        return currentGamepadStates[(int)index].IsButtonDown(button) && focused;
     }
 
     public static bool GetPressed(Buttons button, PlayerIndex index)
     {
-        return currentGamepadStates[(int)index].IsButtonDown(button) && !previousGamepadStates[(int)index].IsButtonDown(button);
+        return currentGamepadStates[(int)index].IsButtonDown(button) && !previousGamepadStates[(int)index].IsButtonDown(button) && focused;
     }
 
     public static bool GetReleased(Buttons button, PlayerIndex index)
     {
-        return !currentGamepadStates[(int)index].IsButtonDown(button) && previousGamepadStates[(int)index].IsButtonDown(button);
+        return !currentGamepadStates[(int)index].IsButtonDown(button) && previousGamepadStates[(int)index].IsButtonDown(button) && focused;
     }
 
     public static bool Get(Buttons button) => Get(button, PlayerIndex.One);
@@ -88,17 +100,17 @@ public static class Input
 
     public static bool Get(MouseButtons button)
     {
-        return GetMouseButtonState(currentMouseState, button) == ButtonState.Pressed;
+        return GetMouseButtonState(currentMouseState, button) == ButtonState.Pressed && focused;
     }
 
     public static bool GetPressed(MouseButtons button)
     {
-        return GetMouseButtonState(currentMouseState, button) == ButtonState.Pressed && GetMouseButtonState(previousMouseState, button) == ButtonState.Released;
+        return GetMouseButtonState(currentMouseState, button) == ButtonState.Pressed && GetMouseButtonState(previousMouseState, button) == ButtonState.Released && focused;
     }
 
     public static bool GetReleased(MouseButtons button)
     {
-        return GetMouseButtonState(currentMouseState, button) == ButtonState.Released && GetMouseButtonState(previousMouseState, button) == ButtonState.Pressed;
+        return GetMouseButtonState(currentMouseState, button) == ButtonState.Released && GetMouseButtonState(previousMouseState, button) == ButtonState.Pressed && focused;
     }
 
     static ButtonState GetMouseButtonState(MouseState state, MouseButtons button)
@@ -118,7 +130,7 @@ public static class Input
 
     public static int GetScrollDirection()
     {
-        return System.Math.Sign(currentMouseState.ScrollWheelValue - previousMouseState.ScrollWheelValue);
+        return focused ? System.Math.Sign(currentMouseState.ScrollWheelValue - previousMouseState.ScrollWheelValue) : 0;
     }
 }
 

@@ -36,12 +36,19 @@ public class SoundDef : AbstractRegistryDef
 
 public class SoundRegistry : GenericRegistry<SoundDef>
 {
-    public static readonly SoundDef PLAYER_JUMP = new SoundDef(new SoundSettings{volume = 0.25f});
-    public static readonly SoundDef PLAYER_LAND = new SoundDef(new SoundSettings{volume = 0.5f});
-
     public override void Register()
     {
-        Registry.RegisterSound("playerLand", PLAYER_JUMP);
-        Registry.RegisterSound("playerJump", PLAYER_LAND);
+        Registry.RegisterSound("playerLand", new SoundDef(new SoundSettings { volume = 0.25f }));
+        Registry.RegisterSound("playerJump", new SoundDef(new SoundSettings { volume = 0.5f }));
+
+        Registry.RegisterSound("swing", new SoundDef(new SoundSettings { volume = 0.5f }));
+        Registry.RegisterSound("grab", new SoundDef(new SoundSettings { volume = 1 }));
+
+        Registry.RegisterSound("dig_0", new SoundDef(new SoundSettings { volume = 1 }));
+        Registry.RegisterSound("dig_1", new SoundDef(new SoundSettings { volume = 1 }));
+        Registry.RegisterSound("dig_2", new SoundDef(new SoundSettings { volume = 1 }));
+        Registry.RegisterSound("tink_0", new SoundDef(new SoundSettings { volume = 1 }));
+        Registry.RegisterSound("tink_1", new SoundDef(new SoundSettings { volume = 1 }));
+        Registry.RegisterSound("tink_2", new SoundDef(new SoundSettings { volume = 1 }));
     }
 }

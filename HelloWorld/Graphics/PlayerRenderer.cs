@@ -8,14 +8,8 @@ namespace HelloWorld.Graphics;
 
 public class PlayerRenderer
 {
-    private readonly SpriteBatch _spriteBatch;
     private readonly List<Texture2D> _textures = new();
     private Texture2D empty;
-
-    public PlayerRenderer(GraphicsDevice graphicsDevice)
-    {
-        _spriteBatch = new SpriteBatch(graphicsDevice);
-    }
 
     public void LoadContent()
     {
@@ -61,21 +55,19 @@ public class PlayerRenderer
         Sleeve2
     }
 
-    public void DrawPlayer(Player player)
+    public void DrawPlayer(Player player, SpriteBatch _spriteBatch)
     {
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-
-        DrawPlayer(player, player.position, player.angle, new Vector2(26 / 2, 36 / 2 - 2));
-
-        _spriteBatch.End();
+        DrawPlayer(player, _spriteBatch, player.position.ToVector2(), player.angle, new Vector2(26 / 2, 36 / 2 - 2));
     }
 
-    private void DrawPlayer(Player player, Vector2 position, float rotation, Vector2 pivotPoint)
+    private void DrawPlayer(Player player, SpriteBatch _spriteBatch, Vector2 position, float rotation, Vector2 pivotPoint)
     {
         Rectangle bodyFrame = new(0, 0, 26, 36);
         Rectangle legFrame = new(0, 0, 26, 36);
         Rectangle armFrame = new(0, 0, 26, 36);
         Rectangle eyelidFrame = new(0, 0, 26, 36);
+
+        // 0xf3dcbc
 
         position += new Vector2(6, 4);
 
@@ -102,24 +94,21 @@ public class PlayerRenderer
         //     0
         // );
 
-        for(int i = 0; i < 3; i++)
-        {
-            _spriteBatch.Draw(
-                _textures[i] ?? empty,
-                Vector2.Round(position),
-                bodyFrame,
-                Color.White,
-                rotation,
-                pivotPoint,
-                1,
-                spriteEffects,
-                0
-            );
-        }
+        _spriteBatch.Draw(
+            _textures[(int)TextureIndex.Head] ?? empty,
+            position,
+            bodyFrame,
+            player.styleColors.skin,
+            rotation,
+            pivotPoint,
+            1,
+            spriteEffects,
+            0
+        );
 
         _spriteBatch.Draw(
-            _textures[(int)TextureIndex.Eyelids] ?? empty,
-            Vector2.Round(position),
+            _textures[(int)TextureIndex.EyeWhites] ?? empty,
+            position,
             eyelidFrame,
             Color.White,
             rotation,
@@ -130,8 +119,32 @@ public class PlayerRenderer
         );
 
         _spriteBatch.Draw(
+            _textures[(int)TextureIndex.EyePupils] ?? empty,
+            position,
+            eyelidFrame,
+            Color.White,
+            rotation,
+            pivotPoint,
+            1,
+            spriteEffects,
+            0
+        );
+
+        _spriteBatch.Draw(
+            _textures[(int)TextureIndex.Eyelids] ?? empty,
+            position,
+            eyelidFrame,
+            player.styleColors.skin,
+            rotation,
+            pivotPoint,
+            1,
+            spriteEffects,
+            0
+        );
+
+        _spriteBatch.Draw(
             _textures[(int)TextureIndex.Hair] ?? empty,
-            Vector2.Round(position),
+            position,
             bodyFrame,
             Color.White,
             rotation,
@@ -143,9 +156,9 @@ public class PlayerRenderer
 
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Arms] ?? empty,
-            Vector2.Round(position),
+            position,
             new(armFrame.Location + new Point(0, 36 * 2), armFrame.Size),
-            Color.White,
+            player.styleColors.skin,
             rotation,
             pivotPoint,
             1,
@@ -155,9 +168,9 @@ public class PlayerRenderer
 
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Sleeve1] ?? empty,
-            Vector2.Round(position),
+            position,
             new(armFrame.Location + new Point(0, 36 * 2), armFrame.Size),
-            Color.White,
+            player.styleColors.clothes1,
             rotation,
             pivotPoint,
             1,
@@ -167,9 +180,9 @@ public class PlayerRenderer
 
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Sleeve2] ?? empty,
-            Vector2.Round(position),
+            position,
             new(armFrame.Location + new Point(0, 36 * 2), armFrame.Size),
-            Color.White,
+            player.styleColors.clothes2,
             rotation,
             pivotPoint,
             1,
@@ -177,26 +190,47 @@ public class PlayerRenderer
             0
         );
 
-        for(int i = 5; i < 8; i++)
-        {
-            _spriteBatch.Draw(
-                _textures[i] ?? empty,
-                Vector2.Round(position),
-                legFrame,
-                Color.White,
-                rotation,
-                pivotPoint,
-                1,
-                spriteEffects,
-                0
-            );
-        }
+        _spriteBatch.Draw(
+            _textures[(int)TextureIndex.Legs] ?? empty,
+            position,
+            legFrame,
+            player.styleColors.skin,
+            rotation,
+            pivotPoint,
+            1,
+            spriteEffects,
+            0
+        );
+
+        _spriteBatch.Draw(
+            _textures[(int)TextureIndex.Pants] ?? empty,
+            position,
+            legFrame,
+            player.styleColors.pants,
+            rotation,
+            pivotPoint,
+            1,
+            spriteEffects,
+            0
+        );
+
+        _spriteBatch.Draw(
+            _textures[(int)TextureIndex.Shoes] ?? empty,
+            position,
+            legFrame,
+            player.styleColors.shoes,
+            rotation,
+            pivotPoint,
+            1,
+            spriteEffects,
+            0
+        );
 
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Chest] ?? empty,
-            Vector2.Round(position),
+            position,
             bodyFrame,
-            Color.White,
+            player.styleColors.skin,
             rotation,
             pivotPoint,
             1,
@@ -206,9 +240,9 @@ public class PlayerRenderer
 
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Clothes1] ?? empty,
-            Vector2.Round(position),
+            position,
             armFrame,
-            Color.White,
+            player.styleColors.clothes1,
             rotation,
             pivotPoint,
             1,
@@ -218,9 +252,9 @@ public class PlayerRenderer
 
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Clothes2] ?? empty,
-            Vector2.Round(position),
+            position,
             armFrame,
-            Color.White,
+            player.styleColors.clothes2,
             rotation,
             pivotPoint,
             1,
@@ -228,11 +262,32 @@ public class PlayerRenderer
             0
         );
 
+        if(player.Swinging && !Input.GetPressed(MouseButtons.LeftButton) && player.HeldItem is not null)
+        {
+            var def = player.HeldItem.GetDef();
+            var tex = Main.GetAsset<Texture2D>(def.GetTexturePath());
+
+            if(tex is not null)
+            {
+                _spriteBatch.Draw(
+                    tex,
+                    position + new Vector2(player.Facing * -3, 3),
+                    null,
+                    Color.White,
+                    MathHelper.ToRadians((((player.armFrame - 2) * 180 / 5) - 60) * player.Facing - (player.Facing < 0 ? 90 : 0)),
+                    new Vector2(-4, tex.Height + 4),
+                    1,
+                    SpriteEffects.None,
+                    0
+                );
+            }
+        }
+
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Arms] ?? empty,
-            Vector2.Round(position),
+            position,
             armFrame,
-            Color.White,
+            player.styleColors.skin,
             rotation,
             pivotPoint,
             1,
@@ -242,9 +297,9 @@ public class PlayerRenderer
 
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Sleeve1] ?? empty,
-            Vector2.Round(position),
+            position,
             armFrame,
-            Color.White,
+            player.styleColors.clothes1,
             rotation,
             pivotPoint,
             1,
@@ -254,9 +309,9 @@ public class PlayerRenderer
 
         _spriteBatch.Draw(
             _textures[(int)TextureIndex.Sleeve2] ?? empty,
-            Vector2.Round(position),
+            position,
             armFrame,
-            Color.White,
+            player.styleColors.clothes2,
             rotation,
             pivotPoint,
             1,

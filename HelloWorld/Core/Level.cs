@@ -2,18 +2,22 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using HelloWorld.Events;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
+using HelloWorld.Events;
+
 namespace HelloWorld.Core;
 
-public class Level : IDisposable, IDrawable
+public class Level : IDisposable
 {
     protected Tile[,] _tiles;
     public int width;
     public int height;
+
+    private Texture2D breakingTexture;
 
     public Rectangle Bounds {
         get {
@@ -55,10 +59,6 @@ public class Level : IDisposable, IDrawable
         }
     }
 
-    public int DrawOrder => 0;
-
-    public bool Visible => true;
-
     public bool drawCollisionsOnDebug = false;
 
     public Tile TilePlace(Rectangle rect)
@@ -82,18 +82,12 @@ public class Level : IDisposable, IDrawable
     private Dictionary<string, Texture2D> _textureCache;
     private readonly List<Rectangle> _collisionChecks;
 
-    private SpriteBatch _spriteBatch;
-
-    public event EventHandler<EventArgs> DrawOrderChanged;
-    public event EventHandler<EventArgs> VisibleChanged;
-
-    public Level(GraphicsDevice graphicsDevice)
+    public Level()
     {
-        _spriteBatch = new(graphicsDevice);
         _collisionChecks = new();
 
-        width = 40;
-        height = 23;
+        width = 200;
+        height = 100;
         _tiles = new Tile[width, height];
 
         _textureCache = new Dictionary<string, Texture2D>
@@ -140,11 +134,11 @@ public class Level : IDisposable, IDrawable
 
     public void RefreshTileShapes(Rectangle area)
     {
-        var _area = ValidateArea(area);
+        area = ValidateArea(area);
 
-        for(int x = _area.X; x < _area.X + _area.Width; x++)
+        for(int x = area.X; x < area.X + area.Width; x++)
         {
-            for(int y = _area.Y; y < _area.Y + _area.Height; y++)
+            for(int y = area.Y; y < area.Y + area.Height; y++)
             {
                 Tile tile = _tiles[x, y];
 
@@ -183,6 +177,11 @@ public class Level : IDisposable, IDrawable
         if((x > 0 && _tiles[x - 1, y].id == tile.id) || x <= 0)
             matches |= 0b1000;
 
+        if((y > 0 && _tiles[x, y - 1].id == "air") || (x < width - 1 && _tiles[x + 1, y].id == "air") || (y < height - 1 && _tiles[x, y + 1].id == "air") || (x > 0 && _tiles[x - 1, y].id == "air"))
+        {
+            tile.lightLevel = 5;
+        }
+
         tile.shape = matches;
     }
 
@@ -216,17 +215,20 @@ public class Level : IDisposable, IDrawable
 
     public void LoadContent()
     {
-        
+        breakingTexture = Main.GetAsset<Texture2D>("Images/Other/breaking_progress");
     }
 
-    public void Draw(GameTime gameTime)
+    public void Draw(SpriteBatch _spriteBatch)
     {
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-
         for(int x = 0; x < width; x++)
         {
             for(int y = 0; y < height; y++)
             {
+                if(x * tileSize + tileSize < Main.CameraPosition.X) continue;
+                if(y * tileSize + tileSize < Main.CameraPosition.Y) continue;
+                if(x * tileSize > Main.CameraPosition.X + Main.NativeScreenSize.X) continue;
+                if(y * tileSize > Main.CameraPosition.Y + Main.NativeScreenSize.Y) continue;
+
                 Tile tile = _tiles[x, y];
                 if(tile.id == "air") continue;
 
@@ -252,6 +254,21 @@ public class Level : IDisposable, IDrawable
                     SpriteEffects.None,
                     0f
                 );
+
+                if(tile.breakingProgress > 0)
+                {
+                    _spriteBatch.Draw(
+                        breakingTexture,
+                        new Vector2(x * tileSize, y * tileSize + (tile.half ? tileSize / 2 : 0)),
+                        new Rectangle(8 * (int)MathHelper.Max(tile.breakingProgress * 3, 1), tile.half ? tileSize / 2 : 0, tileSize, tile.half ? tileSize / 2 : tileSize),
+                        Color.White,
+                        0,
+                        Vector2.Zero,
+                        new Vector2(1, 1),
+                        SpriteEffects.None,
+                        0f
+                    );
+                }
             }
         }
 
@@ -268,8 +285,6 @@ public class Level : IDisposable, IDrawable
         }
 
         if(_collisionChecks.Count > 0) _collisionChecks.Clear();
-
-        _spriteBatch.End();
     }
 
     public void Dispose()
@@ -306,7 +321,8 @@ public class Level : IDisposable, IDrawable
     {
         if(!InWorld(position.X, position.Y)) return;
 
-        _tiles[position.X, position.Y] = new Tile(id);
+        var tile = new Tile(id) { breakingProgress = 0 };
+        _tiles[position.X, position.Y] = tile;
 
         RefreshTileShapes(new Rectangle(new Point(position.X - 1, position.Y - 1), new Point(3, 3)));
     }

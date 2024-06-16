@@ -11,6 +11,7 @@ public abstract class AbstractTile
     public byte shape;
     public float breakingProgress;
     public bool half;
+    public int lightLevel;
 }
 
 public class Tile : AbstractTile

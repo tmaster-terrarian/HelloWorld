@@ -10,6 +10,7 @@ using HelloWorld.Core;
 using HelloWorld.Events;
 using HelloWorld.Graphics;
 using HelloWorld.Registries;
+using System.Collections.Generic;
 
 namespace HelloWorld;
 
@@ -19,7 +20,7 @@ public class Main : Game
 
     public static bool GamepadEnabled { get; private set; }
 
-    public Point screenSize {
+    public static Point ScreenSize {
         get {
             return new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
         }
@@ -31,6 +32,8 @@ public class Main : Game
 
     static ContentManager ContentManager { get; set; }
 
+    public static Point NativeScreenSize { get; private set; } = new(640, 360);
+
     public static Level Level { get; private set; }
     public static Texture2D OnePixel { get; private set; }
     public static GameWindow MainWindow { get; private set; }
@@ -39,19 +42,21 @@ public class Main : Game
 
     RenderTarget2D renderTarget;
 
-    SpriteFont font;
+    Matrix viewMatrix = Matrix.Identity;
+    static Point cameraPos = Point.Zero;
+
+    public static SpriteFont Font { get; private set; }
 
     Vector2 inputVector = Vector2.Zero;
 
     private static GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
-    public static Vector2 MouseWorldPos
-    {
-        get {
-            return new Vector2(Mouse.GetState(MainWindow).X / (_graphics.PreferredBackBufferWidth / 320), Mouse.GetState(MainWindow).Y / (_graphics.PreferredBackBufferHeight / 180));
-        }
-    }
+    public static Point MousePos => new Point(Mouse.GetState().X / (_graphics.PreferredBackBufferWidth / NativeScreenSize.X), Mouse.GetState().Y / (_graphics.PreferredBackBufferHeight / NativeScreenSize.Y));
+
+    public static Point MouseWorldPos => MousePos + cameraPos;
+
+    public static Point CameraPosition => cameraPos;
 
     private PlayerRenderer clientPlayerRenderer;
     private CursorRenderer cursorRenderer;
@@ -73,6 +78,8 @@ public class Main : Game
 
     private static bool _debugMode = false;
     public static bool DebugModeEnabled => _debugMode;
+
+    public static Random WorldGenRandom { get; private set; } = new(0);
 
     public static class GlobalEvents
     {
@@ -105,7 +112,7 @@ public class Main : Game
     {
         Window.Title = "MONOGAYME";
 
-        screenSize = new Point(320 * 3, 180 * 3);
+        ScreenSize = new Point(NativeScreenSize.X * 3, NativeScreenSize.Y * 3);
         _graphics.ApplyChanges();
 
         MainWindow = Window;
@@ -116,28 +123,75 @@ public class Main : Game
         TileRegistry.Register();
         ItemRegistry.Register();
 
-        Level = new Level(GraphicsDevice);
+        Level = new Level();
+
+        for(var x = 0; x < Level.width; x++)
+        {
+            for(int y = 1; y < 30; y++)
+            {
+                int Y = Level.height - y;
+
+                if(WorldGenRandom.NextSingle() < 0.99f)
+                {
+                    Level.SetTile("dirt", new(x, Y));
+                }
+                else
+                {
+                    var nx = x;
+                    var ny = Y;
+
+                    for(int i = 0; i < 20; i++)
+                    {
+                        if(WorldGenRandom.NextSingle() < 0.05f) break;
+
+                        for(int j = 0; j < 100; j++)
+                        {
+                            if(Level.GetTileIdAtTilePosition(new(nx, ny)) != "air") break;
+                            var _x = WorldGenRandom.NextBool();
+                            nx += _x ? (WorldGenRandom.NextBool() ? -1 : 1) : 0;
+                            ny += !_x ? (WorldGenRandom.NextBool() ? -1 : 1) : 0;
+                            if(nx < 0) nx++;
+                            if(nx > Level.width - 1) nx--;
+                            if(ny < 0) ny++;
+                            if(ny > Level.height - 1) ny--;
+                        }
+
+                        if(nx >= 0 && nx < Level.width && ny >= 0 && ny < Level.height)
+                        {
+                            Level.SetTile("air", new(nx, ny));
+                        }
+                    }
+                }
+            }
+        }
+
+        Level.SetTile("dirt", new(16, 16));
+
+        Level.SetTile("brick", new(13, Level.height - 30));
+        Level.GetTileAtTilePosition(new(13, Level.height - 30)).half = true;
+
+        Level.SetTile("brick", new(12, Level.height - 30));
 
         Player = new Player()
         {
-            position = new Vector2(320 / 2, 180 / 2)
+            position = new(320 / 2, 180 / 2)
         };
 
         GamepadDeadZone = 4096;
 
         this.renderTarget = new RenderTarget2D(
             GraphicsDevice,
-            320,
-            180,
+            NativeScreenSize.X,
+            NativeScreenSize.Y,
             false,
             GraphicsDevice.PresentationParameters.BackBufferFormat,
             DepthFormat.Depth24
         );
 
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        clientPlayerRenderer = new PlayerRenderer(GraphicsDevice);
-        cursorRenderer = new CursorRenderer(GraphicsDevice);
-        inventoryRenderer = new InventoryRenderer(GraphicsDevice, Player.Inventory);
+        clientPlayerRenderer = new PlayerRenderer();
+        cursorRenderer = new CursorRenderer();
+        inventoryRenderer = new InventoryRenderer(Player.Inventory);
 
         base.Initialize();
     }
@@ -150,27 +204,6 @@ public class Main : Game
 
         Level.LoadContent();
 
-        Level.SetTile("stone", new(0, 0));
-        Level.SetTile("stone", new(1, 0));
-        Level.SetTile("stone", new(2, 0));
-        Level.SetTile("stone", new(0, 1));
-
-        for(var x = 0; x < Level.width; x++)
-        {
-            for(int y = 1; y < 3; y++)
-            {
-                int Y = Level.height - y;
-                Level.SetTile("stone", new(x, Y));
-            }
-        }
-
-        Level.SetTile("stone", new(16, 16));
-
-        Level.SetTile("brick", new(13, Level.height - 3));
-        Level.GetTileAtTilePosition(new(13, Level.height - 3)).half = true;
-
-        Level.SetTile("brick", new(12, Level.height - 3));
-
         clientPlayerRenderer.LoadContent();
         Player.LoadContent();
 
@@ -178,20 +211,35 @@ public class Main : Game
 
         inventoryRenderer.LoadContent();
 
-        font = SpriteFontBuilder.BuildDefaultFont(Content.Load<Texture2D>("Fonts/default"));
+        Font = SpriteFontBuilder.BuildDefaultFont(Content.Load<Texture2D>("Fonts/default"));
     }
+
+    public static event EventHandler LostFocus;
+    public static event EventHandler RegainedFocus;
+
+    private bool wasActive = true;
 
     protected override void Update(GameTime gameTime)
     {
         _keyboardState = Input.GetKeyboardState();
         _gamePadState  = Input.GetGamePadState();
         _joystickState = Input.GetJoystickState();
-        _mouseState = Input.GetMouseState(Window);
+        _mouseState = Input.GetMouseState();
+
+        if(IsActive != wasActive)
+        {
+            if(wasActive)
+            {
+                LostFocus?.Invoke(this, new());
+            }
+            else
+            {
+                RegainedFocus?.Invoke(this, new());
+            }
+        }
 
         if(GamePadState.IsButtonDown(Buttons.Back) || KeyboardState.IsKeyDown(Keys.Escape))
             Exit();
-
-        float delta = (float)gameTime.ElapsedGameTime.TotalSeconds * 60;
 
         if(Joystick.LastConnectedIndex == 0 && GamepadEnabled)
         {
@@ -212,12 +260,15 @@ public class Main : Game
 
         Player.Update();
 
-        bool playerItemPlaceable = false;
-        bool playerItemCanMine = false;
+        cameraPos.X = MathHelper.Clamp(Player.Center.X - (NativeScreenSize.X / 2), 0, (Level.Bounds.Width * Level.tileSize) - NativeScreenSize.X);
+        cameraPos.Y = MathHelper.Clamp(Player.Center.Y - (NativeScreenSize.Y / 2), 0, (Level.Bounds.Height * Level.tileSize) - NativeScreenSize.Y);
 
-        var mouseTile = Level.GetTileAtPosition(MouseWorldPos);
-        var mouseSnappedPos = MathUtil.Snap(MouseWorldPos, Level.tileSize);
-        var mouseTilePos = (mouseSnappedPos / Level.tileSize).ToPoint();
+        viewMatrix = Matrix.CreateTranslation(new Vector3(-cameraPos.ToVector2(), 0));
+
+        Item.UpdateAll();
+
+        var mouseTile = Level.GetTileAtPosition(MouseWorldPos.ToVector2());
+        var mouseSnappedPos = MathUtil.Snap(MouseWorldPos.ToVector2(), Level.tileSize);
         if(mouseTile != null && Player.IsHoldingTileRelatedItem())
         {
             if(mouseTile.id == "air" && Player.IsHoldingPlaceable())
@@ -225,69 +276,27 @@ public class Main : Game
                 if(Level.TileMeeting(new((mouseSnappedPos - Vector2.UnitX * 5).ToPoint(), new(Level.tileSize + 10, Level.tileSize)))
                 || Level.TileMeeting(new((mouseSnappedPos - Vector2.UnitY * 5).ToPoint(), new(Level.tileSize, Level.tileSize + 10))))
                 {
-                    playerItemPlaceable = true;
-
                     cursorRenderer.CursorPos = mouseSnappedPos;
                     cursorRenderer.State = CursorRenderer.DrawState.Visible;
 
-                    cursorRenderer.positionInvalid = !Player.TileWithinReach(MouseWorldPos);
+                    cursorRenderer.positionInvalid = !Player.TileWithinReach(MouseWorldPos.ToVector2());
                 }
                 else cursorRenderer.State = CursorRenderer.DrawState.Hidden;
             }
             else if(mouseTile.id != "air")
             {
-                var itemDef = Player.HeldItem.GetDef();
-                playerItemCanMine = itemDef.settings.pickaxe;
-
                 cursorRenderer.CursorPos = mouseSnappedPos;
                 cursorRenderer.State = CursorRenderer.DrawState.Visible;
 
-                cursorRenderer.positionInvalid = !Player.TileWithinReach(MouseWorldPos);
+                cursorRenderer.positionInvalid = !Player.TileWithinReach(MouseWorldPos.ToVector2());
             }
             else cursorRenderer.State = CursorRenderer.DrawState.Hidden;
         }
         else cursorRenderer.State = CursorRenderer.DrawState.Hidden;
 
-        playerItemPlaceable = playerItemPlaceable && Level.InWorld(mouseTilePos)
-            && !Player.Hitbox.Intersects(new(mouseSnappedPos.ToPoint(), new(Level.tileSize)));
-
-        playerItemCanMine = playerItemCanMine && Level.InWorld(mouseTilePos);
-
-        if(playerItemPlaceable && Input.Get(MouseButtons.LeftButton))
-        {
-            var pos = mouseTilePos;
-            var itemDef = Player.HeldItem.GetDef<Registries.Item.TileItemDef>();
-            var tileDef = itemDef.GetTileDef();
-
-            itemDef.CreateTile(Level, pos);
-
-            var e = new TileEvent(pos, Player, Level.GetTileAtTilePosition(pos).id);
-
-            tileDef.OnPlace(e);
-            GlobalEvents.DoTilePlace(e);
-
-            Level.UpdateNeighbors(e);
-        }
-
-        if(playerItemCanMine && Input.Get(MouseButtons.LeftButton))
-        {
-            var pos = mouseTilePos;
-            var itemDef = Player.HeldItem.GetDef();
-            var tileDef = Level.GetTileAtTilePosition(pos).GetDef();
-
-            // tool capability checks here
-
-            var e = new TileEvent(pos, Player, Level.GetTileAtTilePosition(pos).id);
-
-            tileDef.OnDestroy(e);
-            GlobalEvents.DoTileDestroy(e);
-
-            Level.SetTile("air", pos);
-
-            Level.UpdateNeighbors(e);
-        }
-
         cursorRenderer.Update();
+
+        wasActive = IsActive;
 
         base.Update(gameTime);
     }
@@ -297,60 +306,37 @@ public class Main : Game
         GraphicsDevice.SetRenderTarget(renderTarget);
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: viewMatrix);
+
+        Level.Draw(_spriteBatch);
+
+        clientPlayerRenderer.DrawPlayer(Player, _spriteBatch);
+
+        Item.DrawAll(_spriteBatch);
+
+        // cursorRenderer.Draw(_spriteBatch);
+
+        _spriteBatch.End();
+
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-
-        Level.Draw(gameTime);
-
-        clientPlayerRenderer.DrawPlayer(Player);
-
-        cursorRenderer.Draw(gameTime);
-
-        inventoryRenderer.Draw(gameTime);
 
         string fps = "fps:" + (int)MathHelper.Max(0f, (float)(1 / gameTime.ElapsedGameTime.TotalSeconds));
 
-        _spriteBatch.DrawString(
-            font,
-            fps,
-            Vector2.Zero + Vector2.UnitY * 18 + Vector2.One,
-            Color.Black,
-            0,
-            Vector2.Zero,
-            1,
-            SpriteEffects.None,
-            1
-        );
-        _spriteBatch.DrawString(
-            font,
-            fps,
-            Vector2.Zero + Vector2.UnitY * 18,
-            Color.White,
-            0,
-            Vector2.Zero,
-            1,
-            SpriteEffects.None,
-            1
-        );
+        _spriteBatch.DrawString(Font, fps, Vector2.Zero + Vector2.UnitY * 18 + Vector2.One, Color.Black);
+        _spriteBatch.DrawString(Font, fps, Vector2.Zero + Vector2.UnitY * 18, Color.White);
 
-        _spriteBatch.DrawString(
-            font,
-            MathF.Round(Player.velocity.X / 8 * 60).ToString(),
-            Vector2.Zero + Vector2.UnitY * 30,
-            Color.White,
-            0,
-            Vector2.Zero,
-            1,
-            SpriteEffects.None,
-            1
-        );
+        // _spriteBatch.DrawString(Font, MathF.Round(Player.velocity.X / Level.tileSize * 60).ToString(), Vector2.Zero + Vector2.UnitY * 30, Color.White);
+
+        inventoryRenderer.Draw(_spriteBatch);
 
         _spriteBatch.End();
 
         GraphicsDevice.SetRenderTarget(null);
+        GraphicsDevice.Clear(Color.Black * 0);
 
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        int scale = (int)MathF.Ceiling((float)ScreenSize.Y / NativeScreenSize.Y);
 
-        float scale = (float)Math.Ceiling(screenSize.Y / 180f);
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: Matrix.CreateScale(scale));
 
         _spriteBatch.Draw(
             renderTarget,
@@ -359,7 +345,7 @@ public class Main : Game
             Color.White,
             0,
             Vector2.Zero,
-            scale,
+            1,
             SpriteEffects.None,
             0
         );
@@ -369,21 +355,26 @@ public class Main : Game
         base.Draw(gameTime);
     }
 
-    public static Player NearestPlayerTo(Vector2 position)
+    public static Player NearestPlayerTo(Point position)
     {
         // TODO: implement multiplayer
         return Player;
     }
 
+    private static readonly List<string> missingAssets = new();
+
     public static T GetAsset<T>(string path)
     {
+        if(missingAssets.Contains(path)) return default;
+
         try
         {
             return ContentManager.Load<T>(path);
         }
         catch(Exception e)
         {
-            Console.Error.WriteLine(e);
+            Console.Error.WriteLine(e.GetType().FullName + $": The content file \"{path}\" was not found.");
+            missingAssets.Add(path);
             return default;
         }
     }
