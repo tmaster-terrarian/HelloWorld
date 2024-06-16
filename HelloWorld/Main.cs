@@ -120,6 +120,8 @@ public class Main : Game
         SoundEffect.SpeedOfSound = 1000000f;
         SoundEffect.MasterVolume = 0.5f;
 
+        Input.Init();
+
         TileRegistry.Register();
         ItemRegistry.Register();
 

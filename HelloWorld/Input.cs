@@ -34,7 +34,7 @@ public static class Input
     public static MouseState GetMouseState(GameWindow window = null)
     {
         previousMouseState = currentMouseState;
-        currentMouseState = Mouse.GetState(window == null ? Main.MainWindow : window);
+        currentMouseState = Mouse.GetState(window ?? Main.MainWindow);
 
         return currentMouseState;
     }
