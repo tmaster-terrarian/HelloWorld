@@ -16,11 +16,11 @@ public class Player : Entity
 
     public class StyleColors
     {
-        public Color skin;
-        public Color pants;
-        public Color shoes;
-        public Color clothes1;
-        public Color clothes2;
+        public Color Skin { get; set; }
+        public Color Pants { get; set; }
+        public Color Shoes { get; set; }
+        public Color Clothes1 { get; set; }
+        public Color Clothes2 { get; set; }
     }
 
     private readonly int _baseReach = 5;
@@ -28,6 +28,8 @@ public class Player : Entity
     private PlayerState state;
     private bool swinging = false;
     private int armSpeed = 30;
+    private int toolSpeed = 30;
+    private float toolDelay = 0;
 
     public float moveSpeed = 2f;
     public float jumpSpeed = -4.35f;
@@ -36,11 +38,11 @@ public class Player : Entity
     public int inputDir = 0;
 
     public StyleColors styleColors = new StyleColors {
-        skin = Extensions.Hex2Color(0xfddac2),
-        pants = Color.SaddleBrown,
-        shoes = Color.Brown,
-        clothes1 = Color.CornflowerBlue,
-        clothes2 = Color.PaleGreen,
+        Skin = Extensions.Hex2Color(0xfddac2),
+        Pants = new Color(255, 230, 175),
+        Shoes = new Color(160, 105, 60),
+        Clothes1 = new Color(175, 165, 140),
+        Clothes2 = new Color(160, 180, 215),
     };
 
     public float bodyFrame = 0;
@@ -69,9 +71,10 @@ public class Player : Entity
         height = 22;
         Layer = 3;
 
-        _inventory.TryInsert(new("iron_pickaxe"), 0);
-        _inventory.TryInsert(new("stone", 10), 2);
-        _inventory.TryInsert(new("brick", 10), 3);
+        _inventory.TryInsert(new("iron_pickaxe"));
+        _inventory.TryInsert(new("copper_pickaxe"));
+        _inventory.TryInsert(new("stone", 10));
+        _inventory.TryInsert(new("brick", 10));
     }
 
     public void LoadContent()
@@ -220,18 +223,19 @@ public class Player : Entity
 
         if(swinging)
         {
-            if(armFrame < 2) armFrame = 2;
             if(armFrame == 2)
             {
                 armSpeed = HeldItem?.GetDef().settings.useTime ?? armSpeed;
-                UseItem();
 
                 var snd = Registry.GetSound("swing")?.Play();
                 snd.Pitch += (Random.Shared.NextSingle() * 0.1f) - 0.05f;
             }
-            armFrame = MathUtil.Approach(armFrame, 6, 5f / armSpeed);
+            armFrame = MathUtil.Approach(armFrame, 6, 4f / armSpeed);
             if(armFrame >= 6) armFrame = 2;
         }
+
+        if(toolDelay > 0)
+            toolDelay = MathUtil.Approach(toolDelay, 0, 1);
 
         if(Input.Get(MouseButtons.LeftButton) && HeldItem is not null)
         {
@@ -240,6 +244,21 @@ public class Player : Entity
             {
                 swinging = true;
                 armSpeed = def.settings.useTime;
+                armFrame = 2;
+            }
+
+            if(def.settings.tool && toolDelay == 0)
+            {
+                toolSpeed = def.settings.toolSpeed;
+                toolDelay = toolSpeed;
+                TryUseTool();
+            }
+
+            if(def.settings.placeable && toolDelay == 0)
+            {
+                toolSpeed = def.settings.placementSpeed;
+                toolDelay = toolSpeed;
+                TryPlaceItem();
             }
         }
         else
@@ -281,7 +300,7 @@ public class Player : Entity
             {
                 bodyFrame = 5;
             }
-            if(!onGround && velocity.Y > -0.2f && velocity.Y < 0.3f)
+            if(!onGround && velocity.Y > -0.75f && velocity.Y < 0.3f)
             {
                 bodyFrame = 0;
             }
@@ -290,14 +309,10 @@ public class Player : Entity
 
     void UseItem()
     {
-        if(IsHoldingTileRelatedItem())
-        {
-            TryUseTileItem();
-            return;
-        }
+        
     }
 
-    void TryUseTileItem()
+    void TryPlaceItem()
     {
         if(!TileWithinReach(Main.MouseWorldPos.ToVector2())) return;
 
@@ -312,21 +327,16 @@ public class Player : Entity
         var tileDef = mouseTile.GetDef();
 
         bool placeable = false;
-        bool mineable = false;
 
         if(mouseTile is not null)
         {
-            if(mouseTile.id == "air" && IsHoldingPlaceable())
+            if(mouseTile.id == "air")
             {
                 if(level.TileMeeting(new((mousePos - Vector2.UnitX * 5).ToPoint(), new(Level.tileSize + 10, Level.tileSize)))
                 || level.TileMeeting(new((mousePos - Vector2.UnitY * 5).ToPoint(), new(Level.tileSize, Level.tileSize + 10))))
                 {
                     placeable = !Hitbox.Intersects(new(mousePos.ToPoint(), new(Level.tileSize)));
                 }
-            }
-            else if(mouseTile.id != "air")
-            {
-                mineable = itemDef.settings.tool && tileDef.settings.mineable;
             }
         }
 
@@ -349,12 +359,37 @@ public class Player : Entity
 
             level.UpdateNeighbors(e);
         }
+    }
+
+    void TryUseTool()
+    {
+        if(!TileWithinReach(Main.MouseWorldPos.ToVector2())) return;
+
+        var mousePos = MathUtil.Snap(Main.MouseWorldPos.ToVector2(), Level.tileSize);
+        var mouseTilePos = (mousePos / Level.tileSize).ToPoint();
+
+        if(!level.InWorld(mouseTilePos)) return;
+
+        var mouseTile = level.GetTileAtPosition(mousePos);
+
+        var itemDef = HeldItem.GetDef();
+        var tileDef = mouseTile.GetDef();
+
+        bool mineable = false;
+
+        if(mouseTile is not null)
+        {
+            if(mouseTile.id != "air")
+            {
+                mineable = tileDef.settings.mineable;
+            }
+        }
 
         if(mineable)
         {
             if(itemDef.settings.pickaxePower >= tileDef.settings.minimumPickaxePower)
             {
-                mouseTile.breakingProgress += (float)itemDef.settings.pickaxePower / 20 / MathHelper.Max(tileDef.settings.hardness, 1);
+                mouseTile.breakingProgress += (itemDef.settings.pickaxePower / 100f) / tileDef.settings.hardness;
                 if(mouseTile.breakingProgress > 1) mouseTile.breakingProgress = 1;
 
                 int ind = Random.Shared.NextWithinRange(0, 3);
@@ -431,6 +466,8 @@ public class Player : Entity
             MathUtil.Snap(Center.ToVector2(), Level.tileSize),
             MathUtil.Snap(position, Level.tileSize)
         );
+
+        int reach = _baseReach + (HeldItem?.GetDef().settings.rangeBonus ?? 0);
 
         return distance <= _baseReach * Level.tileSize;
     }

@@ -29,8 +29,6 @@ public class Item : Entity
         this.stacks = stacks;
         this._stack = new(id, stacks);
 
-        items.Add(this);
-
         width = 8;
         height = 8;
     }
@@ -74,6 +72,13 @@ public class Item : Entity
                             item.position.Y = (item.level.Bounds.Height + 2) * Level.tileSize;
                     }
                 }
+
+                if(AttemptMergeWithOthers(item))
+                {
+                    items.Remove(item);
+                    i--;
+                    continue;
+                }
             }
 
             item.Move(item.velocity);
@@ -82,16 +87,46 @@ public class Item : Entity
 
             if(item.Hitbox.Intersects(player.Hitbox))
             {
-                int statcks = item._stack.Stacks;
+                int stacks = item._stack.Stacks;
                 if(player.Inventory.TryInsert(ref item._stack))
                 {
+                    Registry.GetSound("grab")?.Play();
                     items.Remove(item);
                     i--;
-                    Registry.GetSound("grab")?.Play();
+                    continue;
                 }
-                else if(statcks != item._stack.Stacks) Registry.GetSound("grab")?.Play();
+                if(stacks != item._stack.Stacks) Registry.GetSound("grab")?.Play();
             }
         }
+    }
+
+    static bool AttemptMergeWithOthers(Item item)
+    {
+        bool ret = false;
+        ItemDef def = Registry.GetItem(item.id);
+        for(int i = 0; i < items.Count; i++)
+        {
+            Item other = items[i];
+            if(ReferenceEquals(other, item)) break;
+
+            if(
+                (other.Hitbox.Intersects(item.Hitbox) || Vector2.Distance(item.Center.ToVector2(), other.Center.ToVector2()) < 10)
+                && other.id == item.id
+                && other._stack.Stacks < def.settings.maxStack
+            )
+            {
+                var diffCount = MathHelper.Min(item._stack.Stacks, def.settings.maxStack - other._stack.Stacks);
+
+                if(diffCount <= 0) ret = true;
+
+                items[i] = _Drop(other.id, other.Center, other._stack.Stacks + diffCount);
+                items[i].velocity *= 0.5f;
+                item._stack.Stacks -= diffCount;
+
+                break;
+            }
+        }
+        return ret;
     }
 
     public static void DrawAll(SpriteBatch _spriteBatch)
@@ -116,13 +151,18 @@ public class Item : Entity
         }
     }
 
-    public static void Drop(string id, Point position, int stacks)
+    static Item _Drop(string id, Point position, int stacks)
     {
-        Item item = new(id, stacks)
+        return new(id, stacks)
         {
             velocity = new((System.Random.Shared.NextSingle() * 4f) - 2, (System.Random.Shared.NextSingle() * -1) - 0.7f),
             Center = position
         };
+    }
+
+    public static void Drop(string id, Point position, int stacks)
+    {
+        items.Add(_Drop(id, position, stacks));
     }
 }
 
@@ -158,7 +198,7 @@ public class ItemStack
         return (T)Registry.GetItem(id);
     }
 
-    public ItemStack Verify()
+    public ItemStack? Verify()
     {
         if(invalid) return null;
         return this;

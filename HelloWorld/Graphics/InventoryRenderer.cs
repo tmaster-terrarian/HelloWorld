@@ -27,7 +27,7 @@ public class InventoryRenderer
         {
             _spriteBatch.Draw(slotTexture, new Vector2(2 + i * 20, 2), null, Color.White * (0.5f + (Main.Player.HeldItemSlot == i ? 0.2f : 0)), 0, Vector2.Zero, 1, SpriteEffects.None, 0);
         }
-        for(var i = 0; i < 10; i++)
+        for(var i = 0; i < _inventory.Size; i++)
         {
             var item = _inventory[i];
             if(item is null) continue;
@@ -46,6 +46,15 @@ public class InventoryRenderer
         Rectangle? rect = null;
         var size = 14f / MathHelper.Max(14, tex.Width);
         var pivot = new Vector2(tex.Width / 2f, tex.Height / 2f);
+
+        if(Main.Player.HeldItemSlot == index && Main.Player.HeldItem is not null)
+        {
+            if(Main.Player.HeldItem.GetDef().settings.tool || Main.Player.HeldItem.GetDef().settings.placeable)
+            {
+                _spriteBatch.Draw(tex, Main.MousePos.ToVector2() + Vector2.One, rect, Color.Black * 0.5f, 0, Vector2.One * -4, size, SpriteEffects.None, 0);
+                _spriteBatch.Draw(tex, Main.MousePos.ToVector2(), rect, Color.White, 0, Vector2.One * -4, size, SpriteEffects.None, 0);
+            }
+        }
 
         _spriteBatch.Draw(tex, new Vector2(11 + index * 20, 11), rect, Color.White, 0, pivot, size, SpriteEffects.None, 0);
 

@@ -36,7 +36,6 @@ public class Main : Game
 
     public static Level Level { get; private set; }
     public static Texture2D OnePixel { get; private set; }
-    public static GameWindow MainWindow { get; private set; }
 
     public static Player Player;
 
@@ -112,10 +111,16 @@ public class Main : Game
     {
         Window.Title = "MONOGAYME";
 
-        ScreenSize = new Point(NativeScreenSize.X * 3, NativeScreenSize.Y * 3);
-        _graphics.ApplyChanges();
+        int screenScale = GraphicsDevice.Adapter.CurrentDisplayMode.Height / 360;
 
-        MainWindow = Window;
+        ScreenSize = new Point(NativeScreenSize.X * screenScale, NativeScreenSize.Y * screenScale);
+        if(ScreenSize.Y == GraphicsDevice.Adapter.CurrentDisplayMode.Height)
+        {
+            Window.Position = Point.Zero;
+            Window.IsBorderless = true;
+        }
+
+        _graphics.ApplyChanges();
 
         SoundEffect.SpeedOfSound = 1000000f;
         SoundEffect.MasterVolume = 0.5f;
@@ -135,7 +140,10 @@ public class Main : Game
 
                 if(WorldGenRandom.NextSingle() < 0.99f)
                 {
-                    Level.SetTile("dirt", new(x, Y));
+                    if(y <= 24)
+                        Level.SetTile("stone", new(x, Y));
+                    else
+                        Level.SetTile("dirt", new(x, Y));
                 }
                 else
                 {
@@ -158,10 +166,7 @@ public class Main : Game
                             if(ny > Level.height - 1) ny--;
                         }
 
-                        if(nx >= 0 && nx < Level.width && ny >= 0 && ny < Level.height)
-                        {
-                            Level.SetTile("air", new(nx, ny));
-                        }
+                        Level.SetTile("air", new(nx, ny));
                     }
                 }
             }
@@ -169,10 +174,10 @@ public class Main : Game
 
         Level.SetTile("dirt", new(16, 16));
 
-        Level.SetTile("brick", new(13, Level.height - 30));
-        Level.GetTileAtTilePosition(new(13, Level.height - 30)).half = true;
+        Level.SetTile("brick", new(13, Level.height - 40));
+        Level.GetTileAtTilePosition(new(13, Level.height - 40)).half = true;
 
-        Level.SetTile("brick", new(12, Level.height - 30));
+        Level.SetTile("brick", new(12, Level.height - 40));
 
         Player = new Player()
         {

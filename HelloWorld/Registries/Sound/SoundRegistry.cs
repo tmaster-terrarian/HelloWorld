@@ -41,12 +41,12 @@ public class SoundRegistry : GenericRegistry<SoundDef>
         Registry.RegisterSound("playerLand", new SoundDef(new SoundSettings { volume = 0.25f }));
         Registry.RegisterSound("playerJump", new SoundDef(new SoundSettings { volume = 0.5f }));
 
-        Registry.RegisterSound("swing", new SoundDef(new SoundSettings { volume = 0.5f }));
-        Registry.RegisterSound("grab", new SoundDef(new SoundSettings { volume = 1 }));
+        Registry.RegisterSound("swing", new SoundDef(new SoundSettings { volume = 0.4f }));
+        Registry.RegisterSound("grab", new SoundDef(new SoundSettings { volume = 0.8f }));
 
-        Registry.RegisterSound("dig_0", new SoundDef(new SoundSettings { volume = 1 }));
-        Registry.RegisterSound("dig_1", new SoundDef(new SoundSettings { volume = 1 }));
-        Registry.RegisterSound("dig_2", new SoundDef(new SoundSettings { volume = 1 }));
+        Registry.RegisterSound("dig_0", new SoundDef(new SoundSettings { volume = 0.9f }));
+        Registry.RegisterSound("dig_1", new SoundDef(new SoundSettings { volume = 0.9f }));
+        Registry.RegisterSound("dig_2", new SoundDef(new SoundSettings { volume = 0.9f }));
         Registry.RegisterSound("tink_0", new SoundDef(new SoundSettings { volume = 1 }));
         Registry.RegisterSound("tink_1", new SoundDef(new SoundSettings { volume = 1 }));
         Registry.RegisterSound("tink_2", new SoundDef(new SoundSettings { volume = 1 }));

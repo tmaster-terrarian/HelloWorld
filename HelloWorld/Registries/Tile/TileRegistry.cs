@@ -68,11 +68,11 @@ public class TileRegistry : GenericRegistry<TileDef>
 
     static TileDef CreateStoney()
     {
-        return new TileDef(new TileOptions { dropsLoot = true, hardness = 2, soundType = TileSoundType.Stone });
+        return new TileDef(new TileOptions { dropsLoot = true, hardness = 1, soundType = TileSoundType.Stone });
     }
 
     static TileDef CreateDirty()
     {
-        return new TileDef(new TileOptions { dropsLoot = true, hardness = 1 });
+        return new TileDef(new TileOptions { dropsLoot = true, hardness = 0.5f });
     }
 }

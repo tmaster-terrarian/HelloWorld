@@ -31,10 +31,10 @@ public static class Input
     static MouseState currentMouseState;
     static MouseState previousMouseState;
 
-    public static MouseState GetMouseState(GameWindow window = null)
+    public static MouseState GetMouseState()
     {
         previousMouseState = currentMouseState;
-        currentMouseState = Mouse.GetState(window ?? Main.MainWindow);
+        currentMouseState = Mouse.GetState();
 
         return currentMouseState;
     }

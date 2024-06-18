@@ -17,14 +17,17 @@ public class ItemOptions
 
     public UseStyle useStyle = UseStyle.None;
     public int useTime = 40;
+    public int toolSpeed = 15;
+    public int placementSpeed = 15;
+    public int rangeBonus = 0;
 
-    public int pickaxePower = 10;
+    public int pickaxePower = 0;
 
     public DamageType damageType = DamageType.Harmless;
     public int damage = 0;
 
     public static ItemOptions Default => new ItemOptions();
-    public static ItemOptions DefaultTile => new ItemOptions { placeable = true, useTime = 18, useStyle = UseStyle.Swing };
+    public static ItemOptions DefaultTile => new ItemOptions { placeable = true, useTime = 15, useStyle = UseStyle.Swing };
     public static ItemOptions DefaultTool => new ItemOptions { tool = true, maxStack = 1, useStyle = UseStyle.Swing };
 }
 
@@ -122,19 +125,22 @@ public class ItemRegistry : GenericRegistry<ItemDef>
     public override void Register()
     {
         Registry.RegisterItem("missing", MISSING);
-        Registry.RegisterItem("iron_pickaxe", CreatePickaxe(15, 5, 22));
+        Registry.RegisterItem("iron_pickaxe", CreatePickaxe(40, 5, 20, 13));
+        Registry.RegisterItem("dirt", new TileItemDef());
         Registry.RegisterItem("stone", new TileItemDef());
         Registry.RegisterItem("brick", new TileItemDef());
-        Registry.RegisterItem("dirt", new TileItemDef());
+        Registry.RegisterItem("copper_pickaxe", CreatePickaxe(35, 4, 23, 15));
     }
 
-    static ToolItemDef CreatePickaxe(int pickaxePower, int damage, int useTime = 30, DamageType damageType = DamageType.Melee, UseStyle useStyle = UseStyle.Swing)
+    static ToolItemDef CreatePickaxe(int pickaxePower, int damage, int useTime = 30, int toolSpeed = 15, DamageType damageType = DamageType.Melee, UseStyle useStyle = UseStyle.Swing, int rangeBonus = 0)
     {
         var options = ItemOptions.DefaultTool;
 
         options.pickaxePower = pickaxePower;
         options.useTime = useTime;
         options.useStyle = useStyle;
+        options.toolSpeed = toolSpeed;
+        options.rangeBonus = rangeBonus;
 
         if(damage > 0)
         {

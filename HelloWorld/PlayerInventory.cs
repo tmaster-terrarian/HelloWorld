@@ -9,12 +9,12 @@ public class PlayerInventory
 
     private readonly ItemStack[] _items = new ItemStack[10];
 
-    public int Length => _items.Length;
+    public int Size => _items.Length;
 
     public ItemStack this[int index]
     {
         get {
-            if(index >= 0 && index < Length)
+            if(index >= 0 && index < Size)
             {
                 var item = _items[index]?.Verify();
 
@@ -47,7 +47,7 @@ public class PlayerInventory
     public bool TryInsert(ref ItemStack item, int index)
     {
         if(index == -1) index = 0;
-        if(index < 0 || index >= Length) throw new IndexOutOfRangeException(nameof(index));
+        if(index < 0 || index >= Size) throw new IndexOutOfRangeException(nameof(index));
         if(item is null) return true;
         if(item.Stacks <= 0) return true;
 
@@ -73,7 +73,7 @@ public class PlayerInventory
             return true;
         }
 
-        for(int i = 0; i < Length; i++) // locate slots that are empty or have matching data
+        for(int i = 0; i < Size; i++) // locate slots that are empty or have matching data
         {
             var slot = this[i];
             if(slot is null) // slot is empty
@@ -102,7 +102,7 @@ public class PlayerInventory
 
     private int FindIndexWithType(ItemStack itemStack)
     {
-        for(int i = 0; i < Length; i++)
+        for(int i = 0; i < Size; i++)
         {
             ItemStack slot = this[i];
 
