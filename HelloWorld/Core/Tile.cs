@@ -65,3 +65,15 @@ public class Tile : AbstractTile
         return Registry.GetTile(id);
     }
 }
+
+public struct HitTile
+{
+    public Point Position { get; set; }
+
+    public float AnimTime { get; set; } = 0;
+
+    public HitTile(Point position)
+    {
+        Position = position;
+    }
+}

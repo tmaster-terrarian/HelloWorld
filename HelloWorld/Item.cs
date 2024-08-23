@@ -6,11 +6,15 @@ using Microsoft.Xna.Framework.Graphics;
 using HelloWorld.Registries;
 using HelloWorld.Registries.Item;
 using HelloWorld.Core;
+using System;
 
 namespace HelloWorld;
 
 public class Item : Entity
 {
+    static readonly List<Item> items = new();
+    static readonly List<Item> toRemove = new();
+
     public string id;
     public int stacks = 1;
 
@@ -18,6 +22,9 @@ public class Item : Entity
 
     private int animFrames = 1;
     private int frameIndex = 0;
+    private int lifetime = 0;
+
+    private float pickupCooldown = 0;
 
     private bool _sizeDirty = true;
 
@@ -33,21 +40,30 @@ public class Item : Entity
         height = 8;
     }
 
-    static List<Item> items = new();
-
     public static void UpdateAll()
     {
         for(int i = 0; i < items.Count; i++)
         {
             Item item = items[i];
 
+            if(item._stack.Stacks <= 0)
+            {
+                items.Remove(item);
+                i--;
+                continue;
+            }
+
+            if(item.pickupCooldown > 0) item.pickupCooldown--;
+
             var player = Main.NearestPlayerTo(item.position);
 
             float dx = player.Center.X - item.Center.X;
             float dy = player.Center.Y - item.Center.Y;
 
-            float distance = (float)System.Math.Sqrt(dx*dx + dy*dy);
-            if(distance <= item.pickupRange && player.Inventory.CanInsert(item._stack))
+            float distance = MathF.Sqrt(dx*dx + dy*dy);
+            if(dx == 0 && dy == 0) distance = 1;
+
+            if(item.pickupCooldown <= 0 && distance <= item.pickupRange && player.Inventory.CanInsert(item._stack))
             {
                 item._noTileCollision = true;
                 item.pickupRange = 64;
@@ -73,19 +89,21 @@ public class Item : Entity
                     }
                 }
 
-                if(AttemptMergeWithOthers(item))
+                if(item.lifetime % 2 == 0)
+                if(AttemptMergeWithOthers(item, out Item remove))
                 {
-                    items.Remove(item);
-                    i--;
-                    continue;
+                    toRemove.Add(remove);
                 }
             }
+
+            if(toRemove.Contains(item))
+                continue;
 
             item.Move(item.velocity);
 
             item.angle = MathHelper.Clamp(item.velocity.X * 0.375f, -1.24f, 1.24f);
 
-            if(item.Hitbox.Intersects(player.Hitbox))
+            if(item.pickupCooldown <= 0 && item.Hitbox.Intersects(player.Hitbox))
             {
                 int stacks = item._stack.Stacks;
                 if(player.Inventory.TryInsert(ref item._stack))
@@ -97,31 +115,54 @@ public class Item : Entity
                 }
                 if(stacks != item._stack.Stacks) Registry.GetSound("grab")?.Play();
             }
+
+            item.lifetime++;
+        }
+
+        if(toRemove.Count > 0)
+        {
+            foreach(var item in toRemove)
+            {
+                items.Remove(item);
+            }
+            toRemove.Clear();
         }
     }
 
-    static bool AttemptMergeWithOthers(Item item)
+    static bool AttemptMergeWithOthers(Item item, out Item remove)
     {
         bool ret = false;
+        remove = null;
+
         ItemDef def = Registry.GetItem(item.id);
         for(int i = 0; i < items.Count; i++)
         {
             Item other = items[i];
-            if(ReferenceEquals(other, item)) break;
+            if(ReferenceEquals(other, item)) continue;
 
             if(
                 (other.Hitbox.Intersects(item.Hitbox) || Vector2.Distance(item.Center.ToVector2(), other.Center.ToVector2()) < 10)
                 && other.id == item.id
                 && other._stack.Stacks < def.settings.maxStack
+                && other._stack.Stacks >= item._stack.Stacks
             )
             {
                 var diffCount = MathHelper.Min(item._stack.Stacks, def.settings.maxStack - other._stack.Stacks);
 
-                if(diffCount <= 0) ret = true;
+                if(diffCount <= 0)
+                {
+                    ret = true;
+                    remove = item;
+                }
 
-                items[i] = _Drop(other.id, other.Center, other._stack.Stacks + diffCount);
-                items[i].velocity *= 0.5f;
+                var newItem = items[i] = _Drop(item.id, other.Center, other._stack.Stacks + diffCount);
+
+                newItem.velocity = (newItem.velocity * 0.5f) + ((item.velocity + other.velocity) / 4f) + Vector2.UnitY * 0.12f;
+
                 item._stack.Stacks -= diffCount;
+
+                if(item.pickupCooldown > 0 || other.pickupCooldown > 0)
+                    newItem.pickupCooldown = (item.pickupCooldown + other.pickupCooldown) / 2f;
 
                 break;
             }
@@ -151,18 +192,19 @@ public class Item : Entity
         }
     }
 
-    static Item _Drop(string id, Point position, int stacks)
+    static Item _Drop(string id, Point position, int stacks, float pickupCooldown = 0, Vector2? velocity = null)
     {
         return new(id, stacks)
         {
-            velocity = new((System.Random.Shared.NextSingle() * 4f) - 2, (System.Random.Shared.NextSingle() * -1) - 0.7f),
-            Center = position
+            velocity = velocity ?? new((System.Random.Shared.NextSingle() * 4f) - 2, (System.Random.Shared.NextSingle() * -1) - 0.7f),
+            Center = position,
+            pickupCooldown = pickupCooldown,
         };
     }
 
-    public static void Drop(string id, Point position, int stacks)
+    public static void Drop(string id, Point position, int stacks, float pickupCooldown = 0, Vector2? velocity = null)
     {
-        items.Add(_Drop(id, position, stacks));
+        items.Add(_Drop(id, position, stacks, pickupCooldown, velocity));
     }
 }
 

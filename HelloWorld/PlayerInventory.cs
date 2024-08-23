@@ -29,6 +29,62 @@ public class PlayerInventory
         }
     }
 
+    public bool CanRemove(string id, int index, int count = -1, bool onlyTargetSlot = false)
+    {
+        _justCheckin = true;
+        bool result = TryRemove(id, index, count, onlyTargetSlot);
+        _justCheckin = false;
+        return result;
+    }
+
+    public bool TryRemove(string id, int index, int count = -1, bool onlyTargetSlot = false)
+    {
+        if(index == -1) index = 0;
+
+        bool ret = false;
+
+        var _s = this[index];
+        if(_s is not null && _s.id == id) // target slot is same item kind
+        {
+            var diffCount = MathHelper.Min(count, _s.Stacks);
+
+            if(count == -1) _s.Stacks = 0;
+            else if(!_justCheckin) _s.Stacks -= diffCount;
+
+            if(count != -1) count -= diffCount;
+
+            if(count <= 0 || onlyTargetSlot) // the amount left to remove was exhausted successfully
+            {
+                return true;
+            }
+        }
+        else
+        {
+            for(int i = 0; i < _items.Length; i++) // locate slots that have matching data
+            {
+                var slot = _items[i];
+                if(slot is null) continue;
+                if(slot.id == id && i != index) // slot is same item kind
+                {
+                    var diffCount = MathHelper.Min(count, _s.Stacks);
+
+                    if(count == -1) _s.Stacks = 0;
+                    else if(!_justCheckin) _s.Stacks -= diffCount;
+
+                    if(count != -1) count -= diffCount;
+                    else ret = true;
+                }
+
+                if(count == 0) // the amount left to remove was exhausted successfully
+                {
+                    return true;
+                }
+            }
+        }
+
+        return ret;
+    }
+
     public bool CanInsert(ItemStack item) => CanInsert(item, FindIndexWithType(item));
 
     public bool CanInsert(ItemStack item, int index)
@@ -47,8 +103,11 @@ public class PlayerInventory
     public bool TryInsert(ref ItemStack item, int index)
     {
         if(index == -1) index = 0;
+
         if(index < 0 || index >= Size) throw new IndexOutOfRangeException(nameof(index));
-        if(item is null) return true;
+
+        ArgumentNullException.ThrowIfNull(item?.Verify(), nameof(item));
+
         if(item.Stacks <= 0) return true;
 
         // if(!_justCheckin) Console.WriteLine(this._items.MemberwiseToString(false));

@@ -38,7 +38,7 @@ public class Player : Entity
     public int inputDir = 0;
 
     public StyleColors styleColors = new StyleColors {
-        Skin = Extensions.Hex2Color(0xfddac2),
+        Skin = Extensions.Hex2Color(0xe5c4b7),
         Pants = new Color(255, 230, 175),
         Shoes = new Color(160, 105, 60),
         Clothes1 = new Color(175, 165, 140),
@@ -207,11 +207,11 @@ public class Player : Entity
             }
         }
 
-        if(Input.Get(Keys.LeftControl))
-        {
-            Center = Main.MouseWorldPos;
-            velocity.Y = 0;
-        }
+        // if(Input.Get(Keys.LeftControl))
+        // {
+        //     Center = Main.MouseWorldPos;
+        //     velocity.Y = 0;
+        // }
 
         Move(velocity);
 
@@ -219,6 +219,20 @@ public class Player : Entity
         {
             velocity.Y = 0;
             position.Y += level.height * Level.tileSize - Hitbox.Bottom;
+        }
+
+        if(HeldItem is not null)
+        {
+            if(Input.GetPressed(Keys.Q))
+            {
+                int amountToDrop = 1;
+
+                if(HeldItem.Stacks == 1 || Input.Get(Keys.LeftControl))
+                    amountToDrop = HeldItem.Stacks;
+
+                Item.Drop(HeldItem.id, Center, amountToDrop, pickupCooldown: 60, velocity: new(1.5f * Facing, -1.2f));
+                HeldItem.Stacks -= amountToDrop;
+            }
         }
 
         if(swinging)
@@ -392,15 +406,19 @@ public class Player : Entity
                 mouseTile.breakingProgress += (itemDef.settings.pickaxePower / 100f) / tileDef.settings.hardness;
                 if(mouseTile.breakingProgress > 1) mouseTile.breakingProgress = 1;
 
-                int ind = Random.Shared.NextWithinRange(0, 3);
                 switch(tileDef.settings.soundType)
                 {
                     case TileSoundType.Default:
-                        Registry.GetSound("dig_" + ind)?.Play();
+                        Registry.GetSound("dig_" + Random.Shared.NextWithinRange(0, 3))?.Play();
                         break;
                     case TileSoundType.Stone:
-                        Registry.GetSound("tink_" + ind)?.Play();
+                        Registry.GetSound("tink_" + Random.Shared.NextWithinRange(0, 3))?.Play();
                         break;
+                }
+
+                if(!level.HitTiles.TryAdd(mouseTilePos, 12))
+                {
+                    level.HitTiles[mouseTilePos] = 12;
                 }
             }
 

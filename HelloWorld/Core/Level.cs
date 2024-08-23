@@ -26,6 +26,8 @@ public class Level : IDisposable
     }
     public const int tileSize = 8;
 
+    public Dictionary<Point, int> HitTiles { get; } = new();
+
     private Rectangle[,] _collisions = null;
 
     public Rectangle[,] Collisions {
@@ -243,14 +245,28 @@ public class Level : IDisposable
 
                 if(tile.half) UV.Height -= tileSize / 2;
 
+                float scale = 1;
+                Point p = new(x, y);
+
+                if(HitTiles.TryGetValue(p, out int frame))
+                {
+                    scale = 1 + (frame / 12f * 0.2f);
+
+                    if(frame > 0)
+                        HitTiles[p]--;
+
+                    if(frame == 1)
+                        HitTiles.Remove(p);
+                }
+
                 _spriteBatch.Draw(
                     texture,
-                    new Vector2(x * tileSize, y * tileSize + (tile.half ? tileSize / 2 : 0)),
+                    new Vector2(x * tileSize, y * tileSize + (tile.half ? tileSize / 2 : 0)) + new Vector2(tileSize / 2),
                     UV,
                     Color.White,
                     0,
-                    Vector2.Zero,
-                    new Vector2(1, 1),
+                    new Vector2(tileSize / 2),
+                    scale,
                     SpriteEffects.None,
                     0f
                 );
@@ -259,12 +275,12 @@ public class Level : IDisposable
                 {
                     _spriteBatch.Draw(
                         breakingTexture,
-                        new Vector2(x * tileSize, y * tileSize + (tile.half ? tileSize / 2 : 0)),
+                        new Vector2(x * tileSize, y * tileSize + (tile.half ? tileSize / 2 : 0)) + new Vector2(tileSize / 2),
                         new Rectangle(8 * (int)MathHelper.Max(tile.breakingProgress * 3, 1), tile.half ? tileSize / 2 : 0, tileSize, tile.half ? tileSize / 2 : tileSize),
                         Color.White,
                         0,
-                        Vector2.Zero,
-                        new Vector2(1, 1),
+                        new Vector2(tileSize / 2),
+                        scale,
                         SpriteEffects.None,
                         0f
                     );
